@@ -439,9 +439,10 @@ button.uxrow{
 
 /* ------------------------------------------------------------------ nav */
 .nav{
-  position:absolute; top:22px; right:76px; z-index:8;
+  position:absolute; top:22px; right:158px; z-index:8;
   display:flex; align-items:center; gap:18px;
   font-size:var(--t-nav); font-weight:700; letter-spacing:.03em; color:#e2f2fd;
+  white-space:nowrap;
   transition:opacity .28s ease;
 }
 .nav a{ color:inherit; text-decoration:none; }
@@ -456,7 +457,7 @@ button.uxrow{
   aspect-ratio:1/1;
   contain:layout size;
   background:radial-gradient(circle at 42% 36%, #9ad8f4 0%, #1e86c4 44%, #0b4f88 71%, transparent 72.5%);
-  transform:translate(-50%, -50%) scale(var(--gmul, 1));
+  transform:translate(-50%, -50%) scale(var(--gmul, 0.62));
   transform-origin:50% 50%;
   transition:left 1s cubic-bezier(.42,0,.2,1),
              top  1s cubic-bezier(.42,0,.2,1),
@@ -1861,5 +1862,7 @@ html.embed .uxclose-pwa{ display:flex !important; }
 <script src="js/goo-map.js" defer></script>
 <script src="js/goo-compass.js" defer></script>
 <script src="js/goo-shell.js" defer></script>
+<script src="../agent-bridge.js" defer></script>
+<script src="../site-chrome.js" defer></script>
 </body>
 </html>

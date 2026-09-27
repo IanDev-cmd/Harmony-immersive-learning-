@@ -29,6 +29,8 @@ from urllib.parse import parse_qs, urlparse
 
 import requests
 from fastapi import BackgroundTasks, FastAPI, HTTPException
+
+from agent_bridge import router as agent_router
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -1651,6 +1653,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="Immersive Learning", version="1.0.0", lifespan=lifespan)
+app.include_router(agent_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

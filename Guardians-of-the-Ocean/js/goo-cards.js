@@ -841,7 +841,7 @@ addEventListener('keydown', function(e){
   var minus = document.getElementById('gMinus');
   var layerBtn = document.getElementById('gLayersBtn');
   var panel = document.getElementById('gLayersPanel');
-  var mul = 1;
+  var mul = 0.62;
   function applyMul(){
     if(wrap) wrap.style.setProperty('--gmul', mul.toFixed(3));
   }
