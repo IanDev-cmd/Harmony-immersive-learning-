@@ -98,9 +98,8 @@ INSUFFICIENT = (
     "I do not have sufficient information in my knowledge base to answer this."
 )
 WELCOME = (
-    "Hello — I am Immersive Learning. Ask about the OneAquaHealth project, urban stream health, "
-    "the five European pilot cities (Coimbra, Toulouse, Ghent, Benevento, Oslo), "
-    "or the publications in this knowledge base."
+    "Hello — I am Immersive Learning. Ask about health, climate, water, schools, "
+    "surveillance, or any other subject in the embeddings. Every dataset is queried equally."
 )
 _GREETINGS = {
     "hi", "hey", "hello", "yo", "sup", "thanks", "thank", "ok", "okay", "hola",
@@ -115,14 +114,14 @@ _NOISE_MARKERS = (
     "author information",
     "affiliations national",
 )
-SYSTEM_PROMPT = """You are Immersive Learning, an elite, scientific conversational AI engine built explicitly for the OneAquaHealth Global Hackathon. Your primary purpose is to translate complex urban river datasets into clear, actionable "One Health" insights for citizens and policymakers.
+SYSTEM_PROMPT = """You are Immersive Learning, a scientific conversational AI. You answer from the embeddings in this knowledge base. Health, climate, water, schools, surveillance, and every other dataset are equal sources. No single project is the primary function.
 
 ### CORE OPERATIONAL INSTRUCTIONS:
-1. STRICT GROUNDING: You must answer the user's query using ONLY the provided scientific publication text chunks retrieved from ChromaDB. Do not rely on your general training knowledge or assume outside facts.
-2. ZERO HALLUCINATION RULES: If the provided search context does not contain the empirical data or evidence needed to answer the user's question completely, you must reply exactly with: "I do not have sufficient information in my knowledge base to answer this."
-3. INLINE CITATION MANDATE: Every factual claim, statistic, or ecological conclusion you output must be followed by an explicit inline markdown citation linking back to its original research document metadata. Format citations exactly as: `[Source: Publication Title, DOI/Identifier]`.
-4. NO GENERAL REPHRASING: Do not write vague or generic statements. Focus heavily on mentioning specific chemical parameter indices, urbanisation gradients, diatoms, pharmaceutical contaminants, and pilot city research outcomes (Coimbra, Toulouse, Ghent, Benevento, Oslo) as detailed in the papers.
-5. ENGAGING TONE: Maintain a professional, clean, yet universally accessible tone that fits beautifully into a high-value data dashboard search results card.
+1. STRICT GROUNDING: Answer using ONLY the provided chunks retrieved from the embeddings. Do not rely on general training knowledge or assume outside facts.
+2. ZERO HALLUCINATION RULES: If the provided search context does not contain the evidence needed to answer the question, reply exactly with: "I do not have sufficient information in my knowledge base to answer this."
+3. INLINE CITATION MANDATE: Every factual claim must be followed by an explicit inline markdown citation. Format citations exactly as: `[Source: Publication Title, DOI/Identifier]`.
+4. EQUAL DATASETS: Use whichever retrieved datasets match the question — health, climate, water, schools, surveillance, or uploaded files. Do not prefer one collection over another.
+5. TONE: Professional, specific, and clear enough for a results card.
 """
 UNPAYWALL_EMAIL = os.getenv("UNPAYWALL_EMAIL", "aquaask@oneaquahealth.eu")
 
@@ -275,7 +274,7 @@ PROJECT_FACTS = [
 ]
 
 SAMPLE_QUERIES = [
-    "Which university is leading the OneAquaHealth project?",
+    "How do household drinking water, school WASH, and climate risk show up together in the embeddings?",
     "What is the core purpose of initiating a One Digital Health Unified Terminology (ODH-UT) for monitoring biophysical parameters across intertwined domains?",
     "How can earth observation and remote sensing data be combined with in situ techniques to conduct a comprehensive urban stream health assessment?",
 ]
@@ -683,7 +682,7 @@ class DataIngestionManager:
             f"Publication title: {title}",
             f"DOI/Identifier: {doi}",
             f"Landing URL: {origin}",
-            "Collection: OneAquaHealth Global Hackathon knowledge base.",
+            "Collection: Immersive Learning embeddings.",
         ]
         if _is_doi(doi):
             parts.extend(self._crossref_bits(doi))
@@ -852,7 +851,7 @@ def _cite_label(meta: dict[str, Any], fallback_origin: str = "", fallback_sectio
         return title
     if doi:
         return doi
-    return fallback_origin or "OneAquaHealth"
+    return fallback_origin or "Immersive Learning"
 
 
 def detect_upload_suffix(data: bytes, filename: str) -> str:
@@ -1424,16 +1423,14 @@ class ImmersiveLearningEngine:
                 seen.add(key)
                 docs.append(doc)
 
-        biased = f"{query} OneAquaHealth"
         with ThreadPoolExecutor(max_workers=3) as pool:
             futures = [
                 pool.submit(self._ddg_instant, query),
-                pool.submit(self._ddg_instant, biased),
-                pool.submit(self._duckduckgo_search, biased),
+                pool.submit(self._duckduckgo_search, query),
             ]
             tavily_key = os.getenv("TAVILY_API_KEY") or ""
             if tavily_key:
-                futures.append(pool.submit(self._tavily_search, biased, tavily_key))
+                futures.append(pool.submit(self._tavily_search, query, tavily_key))
             try:
                 from concurrent.futures import as_completed
 
@@ -1783,11 +1780,11 @@ class ImmersiveLearningEngine:
         packed = "\n\n".join(context_blocks)[:6000]
         human = (
             f"Question:\n{query}\n\n"
-            "Retrieved OneAquaHealth publication chunks and fast web snippets:\n"
+            "Retrieved embedding chunks and web snippets. Every dataset is equal:\n"
             f"{packed}\n\n"
             "Answer using this evidence. Cite every factual claim as "
-            "[Source: Publication Title, DOI/Identifier]. Prefer publication chunks; "
-            "use web snippets when they fill a gap about the OneAquaHealth project."
+            "[Source: Publication Title, DOI/Identifier]. Use the chunks that match "
+            "the question, whether they are health, climate, water, or another dataset."
         )
         text = self._grok_generate(human)
         if text and text != INSUFFICIENT:

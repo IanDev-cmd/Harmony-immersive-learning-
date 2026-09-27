@@ -149,8 +149,15 @@
     uni:'<path d="M3 10l9-5 9 5-9 5-9-5Z"/><path d="M12 15v5"/><path d="M8 21h8"/>'
   };
 
-  var filters = { mangroves:true, coral:true, plastic:true, barriers:true, edu:true };
-  var map, satLayer, streetLayer, topoLayer, heatTemp, heatPlastic, riskLayer, routeLayer, markerLayer, eduLayer;
+  var filters = { mangroves:true, coral:true, plastic:true, barriers:true, edu:true, health:true };
+  var map, satLayer, streetLayer, topoLayer, heatTemp, heatPlastic, riskLayer, routeLayer, markerLayer, eduLayer, healthLayer;
+  var HEALTH = null;
+  var HEALTH_BLUE = {
+    jmp:'#1a73e8', schools:'#4fc3f7', care:'#0277bd', glass:'#1565c0', nors:'#0d47a1', streams:'#29b6f6', climate:'#01579b'
+  };
+  var HEALTH_LABEL = {
+    jmp:'WHO/UNICEF JMP', schools:'WASH in Schools', care:'WASH in care', glass:'WHO GLASS', nors:'CDC NORS', streams:'Urban streams', climate:'Climate coasts'
+  };
   var currentBase = 'sat';
   var ready = false;
   var toastTimer = null;
@@ -384,6 +391,52 @@
     loadSchools().then(function(){ paintEdu(); });
   }
 
+  function loadHealth(){
+    if(HEALTH) return Promise.resolve(HEALTH);
+    return fetch('assets/maps/health.geojson').then(function(r){
+      if(!r.ok) throw new Error('health');
+      return r.json();
+    }).then(function(gj){
+      HEALTH = gj;
+      return HEALTH;
+    }).catch(function(){ HEALTH = { type:'FeatureCollection', features:[] }; return HEALTH; });
+  }
+
+  function syncLegend(){
+    var el = document.getElementById('terraLegend');
+    if(!el) return;
+    el.classList.toggle('show', currentBase === 'climate' || !!filters.health);
+  }
+
+  function paintHealth(){
+    if(!map) return;
+    if(healthLayer && map.hasLayer(healthLayer)) map.removeLayer(healthLayer);
+    healthLayer = L.layerGroup();
+    syncLegend();
+    if(!filters.health) return;
+    loadHealth().then(function(gj){
+      if(!filters.health || !map) return;
+      if(healthLayer && map.hasLayer(healthLayer)) map.removeLayer(healthLayer);
+      healthLayer = L.layerGroup();
+      (gj.features || []).forEach(function(f){
+        var p = f.properties || {};
+        var c = f.geometry && f.geometry.coordinates;
+        if(!c) return;
+        var color = HEALTH_BLUE[p.dataset] || '#1a73e8';
+        var km = Number(p.radius_km) || 80;
+        L.circle([c[1], c[0]], {
+          radius: km * 1000,
+          color: color,
+          weight: 1.5,
+          fillColor: color,
+          fillOpacity: 0.28,
+          interactive: true
+        }).bindTooltip((HEALTH_LABEL[p.dataset] || p.dataset) + ' · ' + (p.name || '') , { sticky:true }).addTo(healthLayer);
+      });
+      healthLayer.addTo(map);
+    });
+  }
+
   function ensureHeat(done){
     if(typeof done === 'function') heatWaiters.push(done);
     if(L.heatLayer){
@@ -462,6 +515,7 @@
     });
     markerLayer.addTo(map);
     rebuildEdu();
+    paintHealth();
 
     var shore = 0, ops = 0, crew = 0;
     visible.forEach(function(c){ shore += c.shoreline; ops += c.cleanups; crew += c.operators; });
@@ -488,7 +542,7 @@
   function setBase(key){
     [satLayer, streetLayer, topoLayer].forEach(function(l){ if(l && map.hasLayer(l)) map.removeLayer(l); });
     if(heatTemp && map.hasLayer(heatTemp)) map.removeLayer(heatTemp);
-    document.getElementById('terraLegend').classList.toggle('show', key==='climate');
+    syncLegend();
     if(key==='street') streetLayer.addTo(map);
     else if(key==='topo') topoLayer.addTo(map);
     else satLayer.addTo(map);
@@ -898,6 +952,7 @@
       filters[key] = !filters[key];
       btn.classList.toggle('on', filters[key]);
       if(key === 'edu') rebuildEdu();
+      else if(key === 'health') paintHealth();
       else rebuildOverlays();
     });
   });

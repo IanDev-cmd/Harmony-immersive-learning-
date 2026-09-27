@@ -1,6 +1,6 @@
 # Immersive Learning
 
-OneAquaHealth IEEE Global Hackathon — AI search over OneAquaHealth publications.
+Ask across every embedding set equally — health, climate, water, and the rest of the knowledge base.
 
 - **Live:** https://harmony-immersive-learning.onrender.com
 - **Code:** https://github.com/IanDev-cmd/Harmony-immersive-learning-

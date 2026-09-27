@@ -214,10 +214,13 @@
   .c-maps{background:#1a73e8;}
   .c-cities{background:#e8a317;}
   .c-sources{background:#7b3ff2;}
+  .c-health{background:#1a73e8;}
+  .c-climate{background:#0277bd;}
   .c-add{background:#f3e6cf;color:#3c4043;}
   .c-custom{background:#5f6368;}
   .c-mobile{background:linear-gradient(160deg,#2fb964,#1a73e8);}
   .c-upload{background:#e8710a;}
+  .c-menu{background:#3c4043;}
 
   .sheet{
     position:fixed;inset:0;z-index:40;
@@ -286,8 +289,8 @@
 <nav class="apps" id="apps" aria-label="Immersive Learning apps">
   <a href="Guardians-of-the-Ocean/desktop.html"><span class="bubble c-globe"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.8 3.8 5.8 3.8 9S14.5 18.2 12 21c-2.5-2.8-3.8-5.8-3.8-9S9.5 5.8 12 3z"/></svg></span>Globe</a>
   <a href="Aqua-ask-/aquaask.html"><span class="bubble c-ask"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><path d="M12 3s6 6.2 6 10.2A6 6 0 0 1 6 13.2C6 9.2 12 3 12 3z"/></svg></span>Ask</a>
-  <a href="Guardians-of-the-Ocean/desktop.html"><span class="bubble c-cities"><svg viewBox="0 0 24 24" fill="#fff"><path d="M4 20V9l5-3v3l5-3v14H4zm12 0v-8h4v8h-4z"/></svg></span>Cities</a>
-  <a href="Aqua-ask-/aquaask.html#sources"><span class="bubble c-sources"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><path d="M6 4h9l3 3v13H6z"/><path d="M15 4v3h3M8 12h8M8 16h6"/></svg></span>Sources</a>
+  <a href="Guardians-of-the-Ocean/desktop.html#jmp"><span class="bubble c-health"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/></svg></span>Health</a>
+  <a href="Guardians-of-the-Ocean/desktop.html#climate"><span class="bubble c-climate"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg></span>Climate</a>
   <a href="Aqua-ask-/aquaask.html#pulse"><span class="bubble c-custom"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg></span>Pulse</a>
   <a href="mobile/"><span class="bubble c-mobile"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M10.5 18.5h3"/></svg></span>Mobile</a>
   <a href="Aqua-ask-/aquaask.html#upload"><span class="bubble c-upload"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V6M8 9.5 12 5.5 16 9.5"/><path d="M5 19h14"/></svg></span>Upload</a>
@@ -412,20 +415,22 @@
   var defaults = [
     {name:"Globe", href:GLOBE, kind:"c-globe", icon:"globe"},
     {name:"2D maps", href:GLOBE + "#roadmap", kind:"c-maps", icon:"map"},
-    {name:"Cities", href:GLOBE, kind:"c-cities", icon:"city"},
-    {name:"Sources", href:ASK + "#sources", kind:"c-sources", icon:"doc"},
-    {name:"Mobile", href:"mobile/", kind:"c-mobile", icon:"phone"},
-    {name:"Upload", href:ASK + "#upload", kind:"c-upload", icon:"upload"}
+    {name:"Health", href:GLOBE + "#jmp", kind:"c-health", icon:"health"},
+    {name:"Climate", href:GLOBE + "#climate", kind:"c-climate", icon:"climate"},
+    {name:"Mobile", href:"mobile/", kind:"c-mobile", icon:"phone"}
   ];
   var icons = {
     globe:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.8 3.8 5.8 3.8 9S14.5 18.2 12 21c-2.5-2.8-3.8-5.8-3.8-9S9.5 5.8 12 3z"/></svg>',
     drop:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><path d="M12 3s6 6.2 6 10.2A6 6 0 0 1 6 13.2C6 9.2 12 3 12 3z"/></svg>',
     map:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linejoin="round"><path d="M9 4.5 3.5 6.5v13L9 17.5l6 2 5.5-2v-13L15 6.5 9 4.5z"/><path d="M9 4.5v13M15 6.5v13"/></svg>',
     city:'<svg viewBox="0 0 24 24" fill="#fff"><path d="M4 20V9l5-3v3l5-3v14H4zm12 0v-8h4v8h-4z"/></svg>',
+    health:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/></svg>',
+    climate:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>',
     doc:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><path d="M6 4h9l3 3v13H6z"/><path d="M15 4v3h3M8 12h8M8 16h6"/></svg>',
     plus:'<svg viewBox="0 0 24 24" fill="none" stroke="#3c4043" stroke-width="1.8" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg>',
     phone:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M10.5 18.5h3"/></svg>',
     upload:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V6M8 9.5 12 5.5 16 9.5"/><path d="M5 19h14"/></svg>',
+    menu:'<svg viewBox="0 0 24 24" fill="#fff"><circle cx="6" cy="6" r="1.7"/><circle cx="12" cy="6" r="1.7"/><circle cx="18" cy="6" r="1.7"/><circle cx="6" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18" cy="12" r="1.7"/><circle cx="6" cy="18" r="1.7"/><circle cx="12" cy="18" r="1.7"/><circle cx="18" cy="18" r="1.7"/></svg>',
     custom:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/></svg>'
   };
 
@@ -454,6 +459,14 @@
     add.id = "addBtn";
     add.innerHTML = '<span class="bubble c-add">'+icons.plus+'</span><span>Add shortcut</span>';
     add.addEventListener("click", function(){ document.getElementById("sheet").classList.add("open"); });
+    var menu = document.createElement("button");
+    menu.className = "shortcut";
+    menu.type = "button";
+    menu.id = "menuShortcut";
+    menu.setAttribute("aria-label", "Open apps");
+    menu.setAttribute("aria-expanded", "false");
+    menu.innerHTML = '<span class="bubble c-menu">'+icons.menu+'</span><span>Menu</span>';
+    shortcuts.appendChild(menu);
     shortcuts.appendChild(add);
   }
   renderShortcuts();
@@ -508,6 +521,17 @@
     apps.classList.remove("open");
     plusBtn.setAttribute("aria-expanded","false");
     appsBtn.setAttribute("aria-expanded","false");
+    var menuShortcut = document.getElementById("menuShortcut");
+    if(menuShortcut) menuShortcut.setAttribute("aria-expanded","false");
+  }
+  function toggleApps(e){
+    e.stopPropagation();
+    var open = apps.classList.toggle("open");
+    plusMenu.classList.remove("open");
+    appsBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    plusBtn.setAttribute("aria-expanded","false");
+    var menuShortcut = document.getElementById("menuShortcut");
+    if(menuShortcut) menuShortcut.setAttribute("aria-expanded", open ? "true" : "false");
   }
   plusBtn.addEventListener("click", function(e){
     e.stopPropagation();
@@ -515,14 +539,11 @@
     apps.classList.remove("open");
     plusBtn.setAttribute("aria-expanded", open ? "true" : "false");
     appsBtn.setAttribute("aria-expanded","false");
+    var menuShortcut = document.getElementById("menuShortcut");
+    if(menuShortcut) menuShortcut.setAttribute("aria-expanded","false");
   });
-  appsBtn.addEventListener("click", function(e){
-    e.stopPropagation();
-    var open = apps.classList.toggle("open");
-    plusMenu.classList.remove("open");
-    appsBtn.setAttribute("aria-expanded", open ? "true" : "false");
-    plusBtn.setAttribute("aria-expanded","false");
-  });
+  appsBtn.addEventListener("click", toggleApps);
+  document.getElementById("menuShortcut").addEventListener("click", toggleApps);
   plusMenu.addEventListener("click", function(e){
     var btn = e.target.closest("[data-go]");
     if(!btn) return;

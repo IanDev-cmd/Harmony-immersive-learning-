@@ -554,6 +554,10 @@
     -ms-overflow-style:none;
   }
   .answer-body::-webkit-scrollbar{width:0; height:0; display:none;}
+  .result-visuals{display:flex;flex-direction:column;gap:14px;margin-top:18px;width:100%;}
+  .result-visual{margin:0;width:100%;border-radius:18px;overflow:hidden;background:rgba(4,16,28,.55);}
+  .result-visual img,.result-map{display:block;width:100%;height:min(52vh,420px);object-fit:cover;background:#0b2740;}
+  .result-visual figcaption{padding:10px 14px 12px;font-size:.82rem;letter-spacing:.04em;color:#e7f4ff;}
   .type-live::after{
     content:'';
     display:inline-block;
@@ -873,7 +877,7 @@
         </svg>
       </button>
     </form>
-    <p class="hint">Hydration · pace · Terra · the bottle</p>
+    <p class="hint">Health · climate · water · every dataset</p>
     <div class="upload-card" id="uploadCard" hidden>
       <form id="uploadForm">
         <strong>Upload study files</strong>
@@ -915,7 +919,7 @@
           <h2 class="hero-word" aria-label="FISH">
             <span class="ghost">F</span><span class="ink">I</span><span class="ink">S</span><span class="ghost">H</span>
           </h2>
-          <p class="hero-kicker">Beauty of the ocean</p>
+          <p class="hero-kicker">Health and climate, equal</p>
           <div class="fish-answer">
             <div class="q" id="answerQ"></div>
             <div class="answer-body" id="answerP"></div>
@@ -1382,12 +1386,93 @@
     window.clearTimeout(typeTimer);
     typeTimer = 0;
   }
+  var RESULT_SETS = [
+    {id:"jmp", title:"Safe Water", keys:["water","wash","jmp","drink","sanitation","hygiene"], img:"https://commons.wikimedia.org/wiki/Special:FilePath/Glass%20of%20water.jpg?width=960"},
+    {id:"schools", title:"School WASH", keys:["school","student","pupil"], img:"https://commons.wikimedia.org/wiki/Special:FilePath/School%20children%20in%20Uganda.jpg?width=960"},
+    {id:"care", title:"Care Facilities", keys:["hospital","clinic","facility","care"], img:"https://commons.wikimedia.org/wiki/Special:FilePath/Hospital%20ward.jpg?width=960"},
+    {id:"glass", title:"Drug Resistance", keys:["antibiotic","resistance","glass","amr"], img:"https://commons.wikimedia.org/wiki/Special:FilePath/Antibiotic%20sensitivity.jpg?width=960"},
+    {id:"nors", title:"Outbreak Watch", keys:["outbreak","nors","foodborne","salmonella"], img:"https://commons.wikimedia.org/wiki/Special:FilePath/SalmonellaNIAID.jpg?width=960"},
+    {id:"climate", title:"Climate", keys:["climate","flood","coast","heat","surge"], img:"https://commons.wikimedia.org/wiki/Special:FilePath/Sossusvlei%20Dune%20Namib%20Desert%20Namibia%20Luca%20Galuzzi%202004.JPG?width=960"}
+  ];
+  function setsForQuestion(q){
+    var s = (q || "").toLowerCase();
+    var hit = RESULT_SETS.filter(function(d){
+      return d.keys.some(function(k){ return s.indexOf(k) !== -1; });
+    });
+    return hit.length ? hit : RESULT_SETS;
+  }
+  function mountResultVisuals(){
+    if(!answerP || answerP.querySelector(".result-visuals")) return;
+    var sets = setsForQuestion(lastQuestion);
+    var wrap = document.createElement("div");
+    wrap.className = "result-visuals";
+    var mapFig = document.createElement("figure");
+    mapFig.className = "result-visual";
+    var mapEl = document.createElement("div");
+    mapEl.className = "result-map";
+    mapEl.id = "answerMap";
+    var cap = document.createElement("figcaption");
+    cap.textContent = "2D map · " + sets.map(function(d){ return d.title; }).join(" · ");
+    mapFig.appendChild(mapEl);
+    mapFig.appendChild(cap);
+    wrap.appendChild(mapFig);
+    sets.forEach(function(d){
+      var fig = document.createElement("figure");
+      fig.className = "result-visual";
+      var img = document.createElement("img");
+      img.alt = d.title;
+      img.src = d.img;
+      img.addEventListener("error", function(){ img.remove(); });
+      var label = document.createElement("figcaption");
+      label.textContent = d.title;
+      fig.appendChild(img);
+      fig.appendChild(label);
+      wrap.appendChild(fig);
+    });
+    answerP.appendChild(wrap);
+    paintAnswerMap(mapEl, sets);
+  }
+  function paintAnswerMap(el, sets){
+    function draw(){
+      if(!window.L || !el.isConnected) return;
+      var map = L.map(el, { zoomControl:false, attributionControl:false, scrollWheelZoom:false }).setView([8, 20], 2);
+      L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom:12 }).addTo(map);
+      var want = {};
+      sets.forEach(function(d){ want[d.id] = true; });
+      fetch("../Guardians-of-the-Ocean/assets/maps/health.geojson").then(function(r){ return r.json(); }).then(function(gj){
+        var bounds = [];
+        (gj.features || []).forEach(function(f){
+          var p = f.properties || {};
+          if(!want[p.dataset]) return;
+          var c = f.geometry && f.geometry.coordinates;
+          if(!c) return;
+          L.circle([c[1], c[0]], { radius:(Number(p.radius_km)||80)*1000, color:"#1a73e8", weight:1.5, fillColor:"#1a73e8", fillOpacity:0.35 }).addTo(map);
+          bounds.push([c[1], c[0]]);
+        });
+        if(bounds.length) map.fitBounds(bounds, { padding:[18,18], maxZoom:4 });
+        setTimeout(function(){ map.invalidateSize(); }, 80);
+      }).catch(function(){});
+    }
+    if(window.L){ draw(); return; }
+    if(!document.getElementById("leaflet-css")){
+      var css = document.createElement("link");
+      css.id = "leaflet-css";
+      css.rel = "stylesheet";
+      css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+      document.head.appendChild(css);
+    }
+    var script = document.createElement("script");
+    script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    script.onload = draw;
+    document.body.appendChild(script);
+  }
   function typeAnswer(raw){
     if(!answerP) return;
     stopTyping();
     if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches){
       answerP.innerHTML = renderAnswerHtml(raw);
       bindCiteClicks(answerP);
+      mountResultVisuals();
       return;
     }
     answerP.innerHTML = "";
@@ -1402,6 +1487,7 @@
       if(pi >= parts.length){
         if(live) live.classList.remove("type-live");
         bindCiteClicks(answerP);
+        mountResultVisuals();
         return;
       }
       var part = parts[pi];

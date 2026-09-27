@@ -1,14 +1,6 @@
 /* Page buttons and the ElevenLabs voice widget on every screen. */
 (function () {
   var path = location.pathname;
-  var base = "";
-  if (path.indexOf("/pwa/island-weather-pwa/") !== -1) base = "../../../";
-  else if (path.indexOf("/Guardians-of-the-Ocean/") !== -1 || path.indexOf("/Aqua-ask-/") !== -1 || path.indexOf("/mobile/") !== -1) base = "../";
-
-  var homeHref = base + "index.html";
-  var globeHref = base + "Guardians-of-the-Ocean/desktop.html";
-  var askHref = base + "Aqua-ask-/aquaask.html";
-  var mobileHref = base + "mobile/";
   var here = "home";
   if (path.indexOf("desktop.html") !== -1) here = "globe";
   else if (path.indexOf("aquaask.html") !== -1) here = "ask";
@@ -16,19 +8,13 @@
 
   var style = document.createElement("style");
   style.textContent = [
-    ".il-jumps{position:fixed;z-index:80;top:14px;left:14px;display:flex;flex-wrap:wrap;gap:8px;max-width:calc(100vw - 28px);}",
-    "body.il-on-globe .il-jumps,body.il-on-home .il-jumps{display:none;}",
     "body.il-on-home .il-gear{top:18px;}",
-    ".il-jumps a,.il-jumps button{appearance:none;border:0;cursor:pointer;text-decoration:none;",
-    "font:600 13px/1 Inter,Arial,sans-serif;color:#12202c;background:#fff;border-radius:999px;",
-    "padding:10px 14px;box-shadow:0 2px 10px rgba(0,0,0,.28);}",
-    ".il-jumps a.is-on{background:#12202c;color:#fff;}",
-    ".il-gear{position:fixed;z-index:80;top:62px;left:14px;width:36px;height:36px;border:0;border-radius:50%;",
+    ".il-gear{position:fixed;z-index:80;top:14px;left:14px;width:36px;height:36px;border:0;border-radius:50%;",
     "background:#fff;color:#12202c;box-shadow:0 2px 10px rgba(0,0,0,.28);cursor:pointer;display:grid;place-items:center;padding:0;}",
     "body.il-on-globe .il-gear{top:auto;bottom:18px;left:8px;}",
     "body.il-on-globe .il-log{top:auto;bottom:62px;left:8px;}",
     ".il-gear svg{width:18px;height:18px;display:block;}",
-    ".il-log{display:none;position:fixed;z-index:80;top:106px;left:14px;width:min(440px,calc(100vw - 28px));",
+    ".il-log{display:none;position:fixed;z-index:80;top:58px;left:14px;width:min(440px,calc(100vw - 28px));",
     "height:min(48vh,380px);overflow:auto;background:rgba(8,16,24,.94);color:#d7ecf5;",
     "font:12px/1.45 ui-monospace,Consolas,monospace;border-radius:12px;padding:10px 12px;box-shadow:0 8px 28px rgba(0,0,0,.35);}",
     ".il-log.open{display:block;}",
@@ -37,34 +23,6 @@
   document.head.appendChild(style);
   if (here === "globe") document.body.classList.add("il-on-globe");
   if (here === "home") document.body.classList.add("il-on-home");
-
-  if (here !== "home") {
-    var nav = document.createElement("div");
-    nav.className = "il-jumps";
-    nav.setAttribute("aria-label", "Pages");
-    var back = document.createElement("button");
-    back.type = "button";
-    back.textContent = "Back";
-    back.addEventListener("click", function () {
-      if (history.length > 1) history.back();
-      else location.href = homeHref;
-    });
-    nav.appendChild(back);
-
-    [
-      ["Home", homeHref, "home"],
-      ["3D Globe", globeHref, "globe"],
-      ["Ask", askHref, "ask"],
-      ["Mobile", mobileHref, "mobile"]
-    ].forEach(function (item) {
-      var a = document.createElement("a");
-      a.href = item[1];
-      a.textContent = item[0];
-      if (item[2] === here) a.className = "is-on";
-      nav.appendChild(a);
-    });
-    document.body.appendChild(nav);
-  }
 
   var gear = document.createElement("button");
   gear.type = "button";

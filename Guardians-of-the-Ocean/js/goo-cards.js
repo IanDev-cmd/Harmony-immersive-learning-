@@ -31,6 +31,36 @@ var CARDS = [
     campaign:null,
     text:"Shifting rainfall and shrinking freshwater reserves put safe drinking water further out of reach for millions. Conservation starts with knowing where every drop goes." },
 
+  { id:'jmp', l1:'Safe', l2:'Water',
+    img: W + 'Glass%20of%20water.jpg?width=640',
+    fall:'linear-gradient(170deg,#7ec8f0 0%,#1a73e8 48%,#0b3a75 100%)',
+    campaign:'WHO/UNICEF JMP',
+    text:"The WHO/UNICEF Joint Monitoring Programme tracks household drinking water, sanitation and hygiene from 2000 onward. It is one embedding set among equals, covering safely managed services country by country." },
+
+  { id:'schools', l1:'School', l2:'WASH',
+    img: W + 'School%20children%20in%20Uganda.jpg?width=640',
+    fall:'linear-gradient(170deg,#b3e5fc 0%,#0288d1 55%,#01579b 100%)',
+    campaign:'WASH in Schools',
+    text:"The WHO/UNICEF JMP schools database records drinking water, sanitation and hygiene services in schools. Coverage is mapped as its own health layer, equal to every other dataset." },
+
+  { id:'care', l1:'Care', l2:'Facilities',
+    img: W + 'Hospital%20ward.jpg?width=640',
+    fall:'linear-gradient(170deg,#e1f5fe 0%,#0277bd 50%,#014a78 100%)',
+    campaign:'WASH in health care',
+    text:"JMP health-care facility estimates cover water, sanitation, hand hygiene, waste management and environmental cleaning. Clinics and hospitals are a separate embedding set, not a footnote to one project." },
+
+  { id:'glass', l1:'Drug', l2:'Resistance',
+    img: W + 'Antibiotic%20sensitivity.jpg?width=640',
+    fall:'linear-gradient(170deg,#90caf9 0%,#1565c0 52%,#0d47a1 100%)',
+    campaign:'WHO GLASS',
+    text:"WHO GLASS collects national antimicrobial resistance surveillance. Participating reference laboratories sit on the health map as blue radii, queried the same way as climate and water." },
+
+  { id:'nors', l1:'Outbreak', l2:'Watch',
+    img: W + 'SalmonellaNIAID.jpg?width=640',
+    fall:'linear-gradient(170deg,#bbdefb 0%,#1976d2 46%,#0a2f66 100%)',
+    campaign:'CDC NORS',
+    text:"CDC’s National Outbreak Reporting System records enteric outbreaks in the United States, including foodborne and waterborne events. It is one equal health dataset in the embeddings." },
+
   { id:'birds', l1:'Save the', l2:'Birds',
     img: W + 'Common%20Kingfisher%20Alcedo%20atthis.jpg?width=640',
     fall:'linear-gradient(160deg,#e8d98a,#c9b25c 60%,#9c8540)',
@@ -684,6 +714,17 @@ function sizeCards(){
 
 CARDS.forEach(function(c, i){ track.appendChild(buildCard(c, i)); });
 CARDS.forEach(function(c){ track.appendChild(buildCard(c, 99)); });
+
+function openFromHash(){
+  var id = (location.hash || "").replace(/^#/, "");
+  if(id === "health") id = "jmp";
+  var card = null;
+  for(var i = 0; i < CARDS.length; i++) if(CARDS[i].id === id) card = CARDS[i];
+  if(!card) return;
+  var btn = track.querySelector('.card[data-id="' + id + '"]');
+  if(btn) open(card, btn);
+}
+setTimeout(openFromHash, 480);
 
 var pitch = sizeCards();
 var loopLen = pitch * CARDS.length;
