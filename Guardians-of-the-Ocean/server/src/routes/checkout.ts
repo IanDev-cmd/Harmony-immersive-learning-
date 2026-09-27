@@ -1,9 +1,9 @@
 import { z } from "zod";
 import type { Request, Response, NextFunction } from "express";
 import type Stripe from "stripe";
-import type { Env } from "./env.js";
-import { prisma } from "./db.js";
-import { HttpError } from "./http.js";
+import type { Env } from "../env.js";
+import { prisma } from "../db.js";
+import { HttpError } from "../http.js";
 
 const checkoutBody = z.object({
   email: z.string().email(),

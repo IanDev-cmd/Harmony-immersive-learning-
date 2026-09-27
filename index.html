@@ -215,6 +215,7 @@
   .c-sources{background:#7b3ff2;}
   .c-add{background:#f3e6cf;color:#3c4043;}
   .c-custom{background:#5f6368;}
+  .c-mobile{background:linear-gradient(160deg,#2fb964,#1a73e8);}
 
   .sheet{
     position:fixed;inset:0;z-index:40;
@@ -286,6 +287,7 @@
   <a href="Guardians-of-the-Ocean/desktop.html"><span class="bubble c-cities"><svg viewBox="0 0 24 24" fill="#fff"><path d="M4 20V9l5-3v3l5-3v14H4zm12 0v-8h4v8h-4z"/></svg></span>Cities</a>
   <a href="Aqua-ask-/aquaask.html#sources"><span class="bubble c-sources"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><path d="M6 4h9l3 3v13H6z"/><path d="M15 4v3h3M8 12h8M8 16h6"/></svg></span>Sources</a>
   <a href="Aqua-ask-/aquaask.html#pulse"><span class="bubble c-custom"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg></span>Pulse</a>
+  <a href="mobile/"><span class="bubble c-mobile"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M10.5 18.5h3"/></svg></span>Mobile</a>
   <a href="Aqua-ask-/aquaask.html#labs"><span class="bubble c-add"><svg viewBox="0 0 24 24" fill="none" stroke="#3c4043" stroke-width="1.7"><path d="M9 3h6M10 3v6L5 20h14L14 9V3"/></svg></span>Labs</a>
 </nav>
 
@@ -349,6 +351,18 @@
         <em>Water, pace, sources</em>
       </span>
     </a>
+    <a class="gcard" href="mobile/">
+      <span class="gcard-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#2fb964" stroke-width="1.7" stroke-linejoin="round">
+          <rect x="6.5" y="2.5" width="11" height="19" rx="2.4"/>
+          <path d="M10.5 18.5h3M9.5 7h5M9.5 10h5M9.5 13h3"/>
+        </svg>
+      </span>
+      <span>
+        <strong>Learn on any phone</strong>
+        <em>SMS, USSD, voice &amp; M-Pesa</em>
+      </span>
+    </a>
   </div>
 
   <div class="shortcuts" id="shortcuts"></div>
@@ -376,7 +390,8 @@
     {name:"Globe", href:GLOBE, kind:"c-globe", icon:"globe"},
     {name:"Ask", href:ASK, kind:"c-ask", icon:"drop"},
     {name:"Cities", href:GLOBE, kind:"c-cities", icon:"city"},
-    {name:"Sources", href:ASK + "#sources", kind:"c-sources", icon:"doc"}
+    {name:"Sources", href:ASK + "#sources", kind:"c-sources", icon:"doc"},
+    {name:"Mobile", href:"mobile/", kind:"c-mobile", icon:"phone"}
   ];
   var icons = {
     globe:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.8 3.8 5.8 3.8 9S14.5 18.2 12 21c-2.5-2.8-3.8-5.8-3.8-9S9.5 5.8 12 3z"/></svg>',
@@ -384,6 +399,7 @@
     city:'<svg viewBox="0 0 24 24" fill="#fff"><path d="M4 20V9l5-3v3l5-3v14H4zm12 0v-8h4v8h-4z"/></svg>',
     doc:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><path d="M6 4h9l3 3v13H6z"/><path d="M15 4v3h3M8 12h8M8 16h6"/></svg>',
     plus:'<svg viewBox="0 0 24 24" fill="none" stroke="#3c4043" stroke-width="1.8" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg>',
+    phone:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M10.5 18.5h3"/></svg>',
     custom:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/></svg>'
   };
 

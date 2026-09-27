@@ -1,6 +1,7 @@
 # Immersive Learning — one Blueprint for the Harmony repo (branch main).
-# Static site serves the home screen, 3D globe, and Ask page.
-# Ask (Docker) and checkout (Node) stay on the $7 Starter plan so they do not sleep.
+# Static site serves the home screen, 3D globe, Ask page and the mobile hub (/mobile/).
+# Ask (Docker) and the Harmony API (Node: Stripe, M-Pesa, Airtel, SMS/USSD/voice) stay on the
+# $7 Starter plan so they do not sleep. Setup guide: Guardians-of-the-Ocean/server/README.md
 
 services:
   - type: web
@@ -15,6 +16,7 @@ services:
         - Guardians-of-the-Ocean/**
         - Aqua-ask-/aquaask.html
         - Aqua-ask-/h2o-assets/**
+        - mobile/**
       ignoredPaths:
         - Guardians-of-the-Ocean/server/**
     headers:
@@ -62,7 +64,8 @@ services:
     plan: starter
     branch: main
     rootDir: Guardians-of-the-Ocean/server
-    buildCommand: npm install && npx prisma generate && npm run build
+    # --include=dev: TypeScript and the Prisma CLI are dev dependencies and NODE_ENV is production.
+    buildCommand: npm install --include=dev && npx prisma generate && npm run build
     startCommand: npx prisma migrate deploy && node dist/index.js
     healthCheckPath: /health
     buildFilter:
@@ -71,6 +74,8 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
+      - key: NODE_ENV
+        value: production
       - key: DATABASE_URL
         sync: false
       - key: STRIPE_SECRET_KEY
@@ -89,3 +94,52 @@ services:
           name: harmony-immersive-learning
           type: web
           envVarKey: RENDER_EXTERNAL_URL
+      # ── Mobile access (see server/README.md). Everything below is optional: until a
+      # gateway's keys are set that channel runs in practice mode on the simulator. ──
+      - key: DEV_TOOLS
+        # Browser phone simulator for demos. Switches itself off once any real gateway is set.
+        value: "1"
+      - key: CALLBACK_TOKEN
+        # Secret path segment for M-Pesa / Airtel / Africa's Talking callbacks. Use hex: openssl rand -hex 24
+        sync: false
+      - key: ADMIN_TOKEN
+        # Guide desk (/mobile/agent.html) and lesson broadcasts.
+        generateValue: true
+      - key: AQUA_ASK_URL
+        value: https://aqua-ask.onrender.com
+      - key: AGENT_PHONES
+        # Comma-separated guide numbers, e.g. 0711000111,0722000222
+        sync: false
+      - key: AT_USERNAME
+        sync: false
+      - key: AT_API_KEY
+        sync: false
+      - key: AT_SMS_FROM
+        sync: false
+      - key: AT_VOICE_NUMBER
+        sync: false
+      - key: USSD_CODE
+        value: "*384*2026#"
+      - key: SMS_SHORTCODE
+        value: "22384"
+      - key: MPESA_ENV
+        value: sandbox
+      - key: MPESA_CONSUMER_KEY
+        sync: false
+      - key: MPESA_CONSUMER_SECRET
+        sync: false
+      - key: MPESA_SHORTCODE
+        sync: false
+      - key: MPESA_PASSKEY
+        sync: false
+      - key: MPESA_TYPE
+        value: paybill
+      - key: AIRTEL_ENV
+        value: sandbox
+      - key: AIRTEL_CLIENT_ID
+        sync: false
+      - key: AIRTEL_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_API_KEY
+        # Optional: transcribes spoken questions on the voice line.
+        sync: false

@@ -1,62 +1,38 @@
 import "dotenv/config";
-import express from "express";
-import cors from "cors";
-import { loadEnv } from "./env.js";
-import { createStripe } from "./stripe.js";
-import { requireCheckoutAuth } from "./auth.js";
-import { errorHandler } from "./http.js";
-import { createCheckoutHandler } from "./routes/checkout.js";
-import { createWebhookHandler } from "./routes/webhook.js";
-import { createBalanceHandler, createOrderStatusHandler } from "./routes/balance.js";
-import { prisma } from "./db.js";
+import { loadEnv, productionWarnings } from "./env.js";
+import { buildApp } from "./app.js";
 
-const env = loadEnv();
-const stripe = createStripe(env);
-const app = express();
+async function main(): Promise<void> {
+  const env = loadEnv();
+  for (const warning of productionWarnings(env)) console.warn(`[config] ${warning}`);
 
-const allowed = env.FRONTEND_ORIGIN.split(",").map((s) => s.trim());
-app.use(
-  cors({
-    origin: (origin, cb) => {
-      if (!origin || allowed.includes(origin) || allowed.includes("*")) {
-        cb(null, true);
-        return;
-      }
-      cb(null, false);
-    },
-  })
-);
+  const built = await buildApp(env);
+  built.deps.payments.startSweeper();
 
-app.post(
-  "/api/webhooks/stripe",
-  express.raw({ type: "application/json" }),
-  createWebhookHandler(stripe, env)
-);
+  const server = built.app.listen(env.PORT, () => {
+    console.log(
+      `Harmony API listening on :${env.PORT} (store=${built.deps.store.kind}, stripe=${env.stripeEnabled ? "on" : "off"}, ` +
+        `sms=${env.smsMode}, voice=${env.voiceMode}, mpesa=${env.mpesaMode}, airtel=${env.airtelMode}, simulator=${env.devTools ? "on" : "off"})`
+    );
+    if (!env.production) {
+      console.log(`  Africa's Talking USSD callback: ${env.publicApiUrl}/api/at/${env.CALLBACK_TOKEN || "dev"}/ussd`);
+    }
+  });
 
-app.use(express.json({ limit: "32kb" }));
+  async function shutdown(): Promise<void> {
+    server.close();
+    await built.close();
+  }
 
-app.get("/health", (_req, res) => {
-  res.json({ ok: true });
-});
-
-app.post("/api/checkout", requireCheckoutAuth(env), createCheckoutHandler(stripe, env));
-app.get("/api/balance", createBalanceHandler(stripe));
-app.get("/api/orders/status", createOrderStatusHandler());
-
-app.use(errorHandler);
-
-const server = app.listen(env.PORT, () => {
-  console.log(`Stripe API listening on :${env.PORT}`);
-});
-
-async function shutdown(): Promise<void> {
-  server.close();
-  await prisma.$disconnect();
+  process.on("SIGTERM", () => {
+    void shutdown();
+  });
+  process.on("SIGINT", () => {
+    void shutdown();
+  });
 }
 
-process.on("SIGTERM", () => {
-  void shutdown();
-});
-process.on("SIGINT", () => {
-  void shutdown();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
 });
