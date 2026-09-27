@@ -750,6 +750,30 @@
     border-radius:0;
   }
   .toast.show{opacity:1;transform:translate(-50%,0);}
+  .upload-card{
+    margin-top:14px;
+    padding:16px 16px 14px;
+    background:rgba(6,16,24,.72);
+    border:1px solid var(--neon-dim);
+    color:var(--white);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+  }
+  .upload-card[hidden]{display:none;}
+  .upload-card strong{display:block;font-size:.95rem;letter-spacing:.04em;}
+  .upload-card p{margin:6px 0 12px;font-size:.82rem;color:rgba(230,240,245,.78);line-height:1.4;}
+  .upload-drop{
+    display:flex;align-items:center;justify-content:center;
+    min-height:72px;padding:12px;margin-bottom:12px;
+    border:1px dashed var(--neon-dim);cursor:pointer;text-align:center;
+  }
+  .upload-drop input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+  .upload-drop span{font-size:.85rem;font-weight:700;letter-spacing:.06em;}
+  .upload-card .ask-btn{height:48px;}
+  .upload-list{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .upload-list li{font-size:.8rem;line-height:1.35;color:rgba(230,240,245,.9);}
+  .upload-list .bad{color:#ffb4a8;}
+  .upload-list .ok{color:#b6f5c8;}
 
   @media (max-width:560px){
     .ask-row{flex-wrap:wrap;}
@@ -793,6 +817,7 @@
         <a href="#sources">Sources</a>
         <a href="#pulse">Pulse</a>
         <a href="#labs">Labs</a>
+        <a href="#upload">Upload</a>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <a class="nav-cta" href="https://github.com/IanDev-cmd/Harmony-immersive-learning-" target="_blank" rel="noopener">GITHUB</a>
@@ -809,6 +834,7 @@
       <a href="#sources">Sources</a>
       <a href="#pulse">Pulse</a>
       <a href="#labs">Labs</a>
+      <a href="#upload">Upload</a>
       <a href="https://github.com/IanDev-cmd/Harmony-immersive-learning-" target="_blank" rel="noopener">GITHUB</a>
     </div>
   </div>
@@ -833,6 +859,12 @@
         <input id="askInput" type="search" name="q" placeholder="Ask Immersive Learning" autocomplete="off" autofocus>
       </div>
       <button class="ask-btn" type="submit">ASK</button>
+      <button class="ai-btn" id="uploadBtn" type="button" aria-label="Upload study files" aria-expanded="false" title="Upload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 16V6M8 9.5 12 5.5 16 9.5"/>
+          <path d="M5 19h14"/>
+        </svg>
+      </button>
       <button class="ai-btn" id="aiBtn" type="button" aria-label="AI mode" aria-pressed="false" title="AI">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M12 3.2 13.4 8.6 18.8 10 13.4 11.4 12 16.8 10.6 11.4 5.2 10 10.6 8.6 12 3.2Z"/>
@@ -842,6 +874,18 @@
       </button>
     </form>
     <p class="hint">Hydration · pace · Terra · the bottle</p>
+    <div class="upload-card" id="uploadCard" hidden>
+      <form id="uploadForm">
+        <strong>Upload study files</strong>
+        <p>PDF, Word, PowerPoint, Excel, CSV, text, HTML, email, or a photo. Up to 10 files, 20 MB each. They become searchable in Ask.</p>
+        <label class="upload-drop">
+          <input id="uploadFiles" type="file" multiple accept=".pdf,.docx,.pptx,.xlsx,.xls,.csv,.txt,.md,.markdown,.html,.htm,.eml,.png,.jpg,.jpeg,.webp">
+          <span id="uploadPick">Choose files</span>
+        </label>
+        <button class="ask-btn" id="uploadSubmit" type="submit">ADD TO ASK</button>
+        <ul class="upload-list" id="uploadList"></ul>
+      </form>
+    </div>
 
     <article class="fish-card" id="answer" aria-live="polite">
       <div class="fish-inner">
@@ -944,6 +988,118 @@
   } else if (location.pathname.indexOf("/Aqua-ask-/") === 0) {
     API_BASE = RENDER_URL;
   }
+
+  var uploadCard = document.getElementById("uploadCard");
+  var uploadBtn = document.getElementById("uploadBtn");
+  var uploadForm = document.getElementById("uploadForm");
+  var uploadFiles = document.getElementById("uploadFiles");
+  var uploadPick = document.getElementById("uploadPick");
+  var uploadList = document.getElementById("uploadList");
+  var uploadSubmit = document.getElementById("uploadSubmit");
+  function setUploadOpen(open){
+    if(!uploadCard || !uploadBtn) return;
+    uploadCard.hidden = !open;
+    uploadBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    if(open && location.hash !== "#upload") location.hash = "upload";
+    if(!open && location.hash === "#upload") history.replaceState(null, "", location.pathname + location.search);
+  }
+  if(uploadBtn) uploadBtn.addEventListener("click", function(){ setUploadOpen(uploadCard.hidden); });
+  if(uploadFiles && uploadPick){
+    uploadFiles.addEventListener("change", function(){
+      var n = uploadFiles.files ? uploadFiles.files.length : 0;
+      uploadPick.textContent = n ? n + (n === 1 ? " file selected" : " files selected") : "Choose files";
+    });
+  }
+  function uploadLine(text, kind){
+    var li = document.createElement("li");
+    if(kind) li.className = kind;
+    li.textContent = text;
+    return li;
+  }
+  function watchUpload(item){
+    if(!item.upload_id || item.status === "rejected" || item.status === "failed" || item.status === "done") return;
+    var tries = 0;
+    var timer = setInterval(function(){
+      tries += 1;
+      fetch(API_BASE + "/api/upload/" + encodeURIComponent(item.upload_id))
+        .then(function(res){ return res.json().then(function(body){ return {ok:res.ok, body:body}; }); })
+        .then(function(result){
+          var body = result.body || {};
+          var status = body.status || "processing";
+          if(status === "done"){
+            clearInterval(timer);
+            item.el.className = "ok";
+            item.el.textContent = body.filename + " — searchable (" + (body.chunks || 0) + " sections)";
+            if(window.ILLog) window.ILLog("ok", "upload done " + body.filename);
+          }else if(status === "failed" || status === "rejected" || !result.ok){
+            clearInterval(timer);
+            item.el.className = "bad";
+            item.el.textContent = (body.filename || item.filename) + " — " + (body.error || body.detail || "could not add this file");
+            if(window.ILLog) window.ILLog("error", "upload failed " + item.el.textContent);
+          }else if(tries > 80){
+            clearInterval(timer);
+            item.el.textContent = item.filename + " — still processing. Ask again in a moment.";
+          }else{
+            item.el.textContent = (body.filename || item.filename) + " — " + status + "…";
+          }
+        })
+        .catch(function(){
+          if(tries > 8){
+            clearInterval(timer);
+            item.el.className = "bad";
+            item.el.textContent = item.filename + " — lost contact with Ask";
+          }
+        });
+    }, 1500);
+  }
+  if(uploadForm){
+    uploadForm.addEventListener("submit", function(ev){
+      ev.preventDefault();
+      var files = uploadFiles && uploadFiles.files;
+      if(!files || !files.length){
+        showToast("Choose a file first");
+        return;
+      }
+      if(files.length > 10){
+        showToast("Upload at most 10 files at a time");
+        return;
+      }
+      var data = new FormData();
+      for(var i = 0; i < files.length; i++) data.append("files", files[i], files[i].name);
+      uploadSubmit.disabled = true;
+      uploadList.innerHTML = "";
+      fetch(API_BASE + "/api/upload", {method:"POST", body:data})
+        .then(function(res){ return res.json().then(function(body){ return {ok:res.ok, body:body}; }); })
+        .then(function(result){
+          uploadSubmit.disabled = false;
+          if(!result.ok){
+            var detail = result.body && (result.body.detail || result.body.error);
+            showToast(typeof detail === "string" ? detail : "Upload was rejected");
+            if(window.ILLog) window.ILLog("error", "upload rejected");
+            return;
+          }
+          var rows = (result.body && result.body.uploads) || [];
+          rows.forEach(function(row){
+            var kind = row.status === "rejected" || row.status === "failed" ? "bad" : "";
+            var text = row.filename + " — " + (row.error || row.status || "queued");
+            var el = uploadLine(text, kind);
+            uploadList.appendChild(el);
+            watchUpload({upload_id:row.upload_id, filename:row.filename, status:row.status, el:el});
+          });
+          if(window.ILLog) window.ILLog("ok", "upload queued " + rows.length + " file(s)");
+          uploadFiles.value = "";
+          uploadPick.textContent = "Choose files";
+        })
+        .catch(function(){
+          uploadSubmit.disabled = false;
+          showToast("Ask is not reachable");
+          if(window.ILLog) window.ILLog("error", "upload request failed");
+        });
+    });
+  }
+  function syncUploadHash(){ setUploadOpen(location.hash === "#upload"); }
+  window.addEventListener("hashchange", syncUploadHash);
+  syncUploadHash();
   var replies = [];
   var sourceList = [];
   var form = document.getElementById("askForm");

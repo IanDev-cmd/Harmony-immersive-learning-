@@ -26,6 +26,7 @@ ACTIONS = {
     "open_maps": "Opening the 2D maps.",
     "close_maps": "Closing the map.",
     "open_ask": "Opening Ask.",
+    "open_mobile": "Opening phone access.",
     "search_city": "Searching that coastal city.",
     "open_card": "Opening that card.",
     "zoom_in": "Zooming the globe in.",

@@ -53,7 +53,7 @@ svg{flex:none}
 /* ── App bar ── */
 .appbar{
   position:sticky;top:0;z-index:30;
-  display:flex;align-items:center;gap:12px;
+  display:flex;align-items:center;flex-wrap:wrap;gap:8px;
   padding:12px 16px;
   padding-top:calc(12px + env(safe-area-inset-top));
   background:linear-gradient(180deg,rgba(3,18,26,.92),rgba(3,18,26,.7));
@@ -81,6 +81,10 @@ svg{flex:none}
 .icon-link{
   display:grid;place-items:center;width:38px;height:38px;border-radius:12px;
   background:var(--surface);border:1px solid var(--line);text-decoration:none;
+}
+@media (max-width:560px){
+  .appbar{flex-wrap:nowrap;}
+  .appbar .pill{display:none;}
 }
 
 /* ── Layout ── */
@@ -491,8 +495,10 @@ svg{flex:none}
 .status.closed{background:var(--surface-2);color:var(--muted)}
 .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
 
-/* site-chrome.js page buttons: the app bar already links home, so they would only overlap it. */
+/* site-chrome.js page buttons: the app bar already links home, globe and ask. */
 .il-jumps{display:none !important}
+.il-gear{top:auto;bottom:calc(var(--tabbar) + 14px);left:auto;right:14px;}
+.il-log{top:auto;bottom:calc(var(--tabbar) + 58px);left:auto;right:14px;}
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}

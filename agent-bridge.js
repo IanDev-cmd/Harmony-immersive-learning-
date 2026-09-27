@@ -15,27 +15,38 @@
     var path = location.pathname;
     if (path.indexOf("desktop.html") !== -1) return "globe";
     if (path.indexOf("aquaask.html") !== -1) return "ask";
+    if (path.indexOf("/mobile/") !== -1) return "mobile";
     return "home";
   }
 
   function urls() {
-    if (pageKind() === "home") {
+    var kind = pageKind();
+    if (kind === "home") {
       return {
         home: "index.html",
         globe: "Guardians-of-the-Ocean/desktop.html",
-        ask: "Aqua-ask-/aquaask.html"
+        ask: "Aqua-ask-/aquaask.html",
+        mobile: "mobile/"
       };
     }
     return {
       home: "../index.html",
-      globe: pageKind() === "globe" ? "desktop.html" : "../Guardians-of-the-Ocean/desktop.html",
-      ask: pageKind() === "ask" ? "aquaask.html" : "../Aqua-ask-/aquaask.html"
+      globe: kind === "globe" ? "desktop.html" : "../Guardians-of-the-Ocean/desktop.html",
+      ask: kind === "ask" ? "aquaask.html" : "../Aqua-ask-/aquaask.html",
+      mobile: kind === "mobile" ? "./" : "../mobile/"
     };
+  }
+
+  function askSection(detail) {
+    var section = (detail || "").toLowerCase().trim();
+    if (section === "library" || section === "sources" || section === "pulse" || section === "labs" || section === "upload") return section;
+    return "";
   }
 
   function needsPage(action) {
     if (action === "open_home") return "home";
     if (action === "open_ask") return "ask";
+    if (action === "open_mobile") return "mobile";
     return "globe";
   }
 
@@ -86,7 +97,7 @@
   function runHere(command) {
     var action = command.action;
     var detail = command.detail || "";
-    if (action === "open_globe" || action === "open_home") return true;
+    if (action === "open_globe" || action === "open_home" || action === "open_mobile") return true;
     if (action === "open_maps") {
       if (typeof window.openTerraRoadmap === "function") {
         window.openTerraRoadmap(cityId(detail) || "jakarta");
@@ -134,10 +145,8 @@
         askInput.value = detail;
         form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
       }
-      var section = (detail || "").toLowerCase();
-      if (section === "library" || section === "sources" || section === "pulse" || section === "labs") {
-        location.hash = section;
-      }
+      var section = askSection(detail);
+      if (section) location.hash = section;
       return true;
     }
     return false;
@@ -150,7 +159,8 @@
       var dest = urls()[target];
       if (command.action === "open_ask" && command.detail && target === "ask") {
         sessionStorage.removeItem(PENDING_KEY);
-        location.href = dest + "?q=" + encodeURIComponent(command.detail);
+        var section = askSection(command.detail);
+        location.href = section ? dest + "#" + section : dest + "?q=" + encodeURIComponent(command.detail);
         return;
       }
       sessionStorage.setItem(PENDING_KEY, JSON.stringify(command));
