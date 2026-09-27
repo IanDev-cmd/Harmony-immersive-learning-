@@ -13,10 +13,15 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import io
 import logging
 import os
 import re
+import tempfile
+import threading
 import time
+import uuid
+import zipfile
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -24,11 +29,11 @@ from datetime import datetime, timezone
 from email import policy
 from email.parser import BytesParser
 from pathlib import Path
-from typing import Any, Iterable, Optional
+from typing import Any, Callable, Iterable, Optional
 from urllib.parse import parse_qs, urlparse
 
 import requests
-from fastapi import BackgroundTasks, FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 
 from agent_bridge import router as agent_router
 from fastapi.middleware.cors import CORSMiddleware
@@ -62,6 +67,18 @@ VECTOR_BUDGET_SEC = 2.6
 FAST_LEXICAL_MIN = 8
 CHUNK_TOKENS = 500
 CHUNK_OVERLAP = 50
+UPLOAD_MAX_MB = int(os.getenv("UPLOAD_MAX_MB", "20"))
+UPLOAD_MAX_BYTES = UPLOAD_MAX_MB * 1024 * 1024
+UPLOAD_MAX_FILES = 10
+UPLOAD_STATUS_KEEP = 500
+OWNER_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+TEXT_UPLOAD_SUFFIXES = {".txt", ".md", ".markdown", ".log", ".csv", ".html", ".htm", ".eml"}
+IMAGE_MIME_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp"}
+TRANSCRIBE_PROMPT = (
+    "Transcribe all readable text in this file exactly, keeping headings and reading order. "
+    "For diagrams, charts, or photos, add a short factual description in square brackets. "
+    "Output only the transcription."
+)
 XAI_MODEL = os.getenv("XAI_MODEL", "grok-3")
 EMBED_MODEL = os.getenv("GOOGLE_EMBED_MODEL", "models/gemini-embedding-001")
 GEMINI_CHAT_MODEL = os.getenv("GOOGLE_CHAT_MODEL", "gemini-2.5-flash-lite")
@@ -334,6 +351,22 @@ class IngestionAck(BaseModel):
     failed: Optional[list[str]] = None
 
 
+class UploadStatus(BaseModel):
+    upload_id: Optional[str] = None
+    filename: str
+    status: str  # queued | processing | done | failed | rejected
+    chunks: Optional[int] = None
+    error: Optional[str] = None
+
+
+class UploadBatchAck(BaseModel):
+    uploads: list[UploadStatus]
+
+
+class UnreadableFile(ValueError):
+    """A file problem whose message is safe to show to the uploader."""
+
+
 @dataclass
 class ParsedDoc:
     text: str
@@ -356,6 +389,9 @@ class RetrievedChunk:
 # ---------------------------------------------------------------------------
 class DataIngestionManager:
     """Universal parser for local files, URLs, YouTube transcripts, and emails."""
+
+    def __init__(self, transcribe: Optional[Callable[[bytes, str], str]] = None) -> None:
+        self._transcribe = transcribe
 
     def parse(self, source: str) -> list[ParsedDoc]:
         source = (source or "").strip()
@@ -402,6 +438,14 @@ class DataIngestionManager:
                 return self._parse_tabular(path, origin, suffix)
             if suffix == ".eml":
                 return self._parse_eml(path, origin)
+            if suffix == ".docx":
+                return self._parse_docx(path, origin)
+            if suffix == ".pptx":
+                return self._parse_pptx(path, origin)
+            if suffix in {".html", ".htm"}:
+                return self._parse_html_file(path, origin)
+            if suffix in IMAGE_MIME_TYPES:
+                return self._parse_image(path, origin, IMAGE_MIME_TYPES[suffix])
             if suffix in {".txt", ".md", ".markdown", ".log"}:
                 text = path.read_text(encoding="utf-8", errors="replace")
                 return [
@@ -412,18 +456,70 @@ class DataIngestionManager:
                         section=path.name,
                     )
                 ]
-            text = path.read_text(encoding="utf-8", errors="replace")
-            return [
-                ParsedDoc(
-                    text=text,
-                    source_type="text",
-                    source_origin=origin,
-                    section=path.name,
-                )
-            ]
+            raise UnreadableFile(f"Unsupported file type: {suffix or 'no extension'}")
         except Exception:
             LOGGER.exception("File parse failed: %s", path)
             raise
+
+    def _parse_docx(self, path: Path, origin: str) -> list[ParsedDoc]:
+        import docx
+
+        document = docx.Document(str(path))
+        parts = [p.text for p in document.paragraphs if p.text.strip()]
+        for table in document.tables:
+            for row in table.rows:
+                cells = [cell.text.strip() for cell in row.cells]
+                if any(cells):
+                    parts.append(" | ".join(cells))
+        text = "\n".join(parts).strip()
+        if not text:
+            raise UnreadableFile("No text found in this Word document")
+        return [ParsedDoc(text=text, source_type="docx", source_origin=origin, section=path.name)]
+
+    def _parse_pptx(self, path: Path, origin: str) -> list[ParsedDoc]:
+        from pptx import Presentation
+
+        docs: list[ParsedDoc] = []
+        for index, slide in enumerate(Presentation(str(path)).slides, start=1):
+            parts: list[str] = []
+            for shape in slide.shapes:
+                if shape.has_text_frame and shape.text_frame.text.strip():
+                    parts.append(shape.text_frame.text)
+                if getattr(shape, "has_table", False) and shape.has_table:
+                    for row in shape.table.rows:
+                        parts.append(" | ".join(cell.text.strip() for cell in row.cells))
+            if slide.has_notes_slide:
+                notes = slide.notes_slide.notes_text_frame.text.strip()
+                if notes:
+                    parts.append(f"Speaker notes: {notes}")
+            text = "\n".join(parts).strip()
+            if text:
+                docs.append(
+                    ParsedDoc(text=text, source_type="pptx", source_origin=origin, section=f"slide {index}")
+                )
+        if not docs:
+            raise UnreadableFile("No text found in this presentation")
+        return docs
+
+    def _parse_html_file(self, path: Path, origin: str) -> list[ParsedDoc]:
+        from bs4 import BeautifulSoup
+
+        soup = BeautifulSoup(path.read_text(encoding="utf-8", errors="replace"), "lxml")
+        for tag in soup(["script", "style", "noscript"]):
+            tag.decompose()
+        title = soup.title.get_text(strip=True) if soup.title else ""
+        text = "\n".join(line.strip() for line in soup.get_text("\n").splitlines() if line.strip())
+        if not text:
+            raise UnreadableFile("No text found in this web page")
+        return [ParsedDoc(text=text, source_type="html", source_origin=origin, section=title or path.name)]
+
+    def _parse_image(self, path: Path, origin: str, mime_type: str) -> list[ParsedDoc]:
+        if self._transcribe is None:
+            raise UnreadableFile("Image uploads are not enabled")
+        text = self._transcribe(path.read_bytes(), mime_type)
+        if not text:
+            raise UnreadableFile("No readable content found in this image")
+        return [ParsedDoc(text=text, source_type="image", source_origin=origin, section="image")]
 
     def _parse_pdf(self, path: Path, origin: str) -> list[ParsedDoc]:
         try:
@@ -444,8 +540,13 @@ class DataIngestionManager:
                         section=f"page {index}",
                     )
                 )
+        if not docs and self._transcribe is not None:
+            # No text layer, so this is most likely a scanned PDF.
+            text = self._transcribe(path.read_bytes(), "application/pdf")
+            if text:
+                docs.append(ParsedDoc(text=text, source_type="pdf", source_origin=origin, section="scanned pdf"))
         if not docs:
-            raise ValueError(f"No extractable text in PDF: {path}")
+            raise UnreadableFile("No readable text found in this PDF")
         return docs
 
     def _parse_tabular(self, path: Path, origin: str, suffix: str) -> list[ParsedDoc]:
@@ -754,7 +855,54 @@ def _cite_label(meta: dict[str, Any], fallback_origin: str = "", fallback_sectio
     return fallback_origin or "OneAquaHealth"
 
 
-def chunk_documents(docs: Iterable[ParsedDoc]) -> tuple[list[str], list[str], list[dict[str, Any]]]:
+def detect_upload_suffix(data: bytes, filename: str) -> str:
+    """Pick the parser from the file's bytes; the name's extension is only trusted for plain text."""
+    if not data:
+        raise UnreadableFile("File is empty")
+    claimed = Path(filename).suffix.lower()
+    if data.startswith(b"%PDF"):
+        return ".pdf"
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return ".png"
+    if data.startswith(b"\xff\xd8\xff"):
+        return ".jpg"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return ".webp"
+    if data.startswith(b"PK\x03\x04"):
+        try:
+            with zipfile.ZipFile(io.BytesIO(data)) as archive:
+                names = set(archive.namelist())
+        except zipfile.BadZipFile as exc:
+            raise UnreadableFile("File appears to be damaged") from exc
+        if "word/document.xml" in names:
+            return ".docx"
+        if "ppt/presentation.xml" in names:
+            return ".pptx"
+        if "xl/workbook.xml" in names:
+            return ".xlsx"
+        raise UnreadableFile("Unsupported file type")
+    if data.startswith(b"\xd0\xcf\x11\xe0"):
+        if claimed == ".xls":
+            return ".xls"
+        raise UnreadableFile("Old Word/PowerPoint files (.doc, .ppt) aren't supported; save as .docx or .pptx")
+    if b"\x00" in data[:8192]:
+        raise UnreadableFile("Unsupported file type")
+    try:
+        data.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise UnreadableFile("Unsupported file type, or text that isn't UTF-8") from exc
+    return claimed if claimed in TEXT_UPLOAD_SUFFIXES else ".txt"
+
+
+def clean_upload_filename(raw: Optional[str]) -> str:
+    name = Path((raw or "").replace("\\", "/")).name
+    name = "".join(ch for ch in name if ch.isprintable()).strip()
+    return name[:200] or "upload"
+
+
+def chunk_documents(
+    docs: Iterable[ParsedDoc], extra_metadata: Optional[dict[str, Any]] = None
+) -> tuple[list[str], list[str], list[dict[str, Any]]]:
     from langchain_text_splitters import RecursiveCharacterTextSplitter
 
     splitter = RecursiveCharacterTextSplitter(
@@ -786,6 +934,7 @@ def chunk_documents(docs: Iterable[ParsedDoc]) -> tuple[list[str], list[str], li
                     "section": doc.section,
                     "publication_title": doc.publication_title or doc.section,
                     "doi": doc.doi or doc.source_origin,
+                    **(extra_metadata or {}),
                 }
             )
     return ids, texts, metadatas
@@ -802,7 +951,9 @@ class ImmersiveLearningEngine:
         self._gemini_chat_model: str = GEMINI_CHAT_MODEL
         self._grok_disabled = False
         self._collection: Optional[Any] = None
-        self._ingest = DataIngestionManager()
+        self._ingest = DataIngestionManager(transcribe=self._gemini_transcribe)
+        self._uploads: dict[str, dict[str, Any]] = {}
+        self._uploads_lock = threading.Lock()
         self._pool = ThreadPoolExecutor(max_workers=8, thread_name_prefix="aquaask")
         self._cache: dict[str, dict[str, Any]] = {}
         self._project_docs: list[ParsedDoc] = []
@@ -878,7 +1029,7 @@ class ImmersiveLearningEngine:
             return bool(result.get("indexed"))
         try:
             docs = self._ingest.parse(source)
-            return self._upsert_docs(docs)
+            return bool(self._upsert_docs(docs))
         except Exception:
             LOGGER.exception("handle_ingestion failed")
             return False
@@ -924,10 +1075,10 @@ class ImmersiveLearningEngine:
             time.sleep(0.6)
         return vectors
 
-    def _upsert_docs(self, docs: list[ParsedDoc]) -> bool:
-        ids, texts, metadatas = chunk_documents(docs)
+    def _upsert_docs(self, docs: list[ParsedDoc], extra_metadata: Optional[dict[str, Any]] = None) -> int:
+        ids, texts, metadatas = chunk_documents(docs, extra_metadata)
         if not texts:
-            return False
+            return 0
         vectors = self._embed_texts(texts)
         self.collection().upsert(
             ids=ids,
@@ -935,8 +1086,69 @@ class ImmersiveLearningEngine:
             embeddings=vectors,
             metadatas=metadatas,
         )
+        # Rebuild the keyword index and drop cached answers so new chunks are searchable at once.
+        self._memory_chunks = []
+        self._cache.clear()
         LOGGER.info("Upserted %s chunks", len(texts))
-        return True
+        return len(texts)
+
+    def _gemini_transcribe(self, data: bytes, mime_type: str) -> str:
+        from google.genai import types
+
+        response = self.gemini_client().models.generate_content(
+            model=GEMINI_CHAT_MODEL.replace("models/", ""),
+            contents=[types.Part.from_bytes(data=data, mime_type=mime_type), TRANSCRIBE_PROMPT],
+            config=types.GenerateContentConfig(temperature=0.0),
+        )
+        return str(getattr(response, "text", "") or "").strip()
+
+    def _set_upload(self, upload_id: str, **fields: Any) -> None:
+        with self._uploads_lock:
+            record = self._uploads.setdefault(upload_id, {"upload_id": upload_id})
+            record.update(fields)
+            while len(self._uploads) > UPLOAD_STATUS_KEEP:
+                self._uploads.pop(next(iter(self._uploads)))
+
+    def upload_status(self, upload_id: str) -> Optional[UploadStatus]:
+        with self._uploads_lock:
+            record = self._uploads.get(upload_id)
+            return UploadStatus(**{k: v for k, v in record.items() if k != "owner_id"}) if record else None
+
+    def queue_upload(self, filename: str, owner_id: Optional[str]) -> str:
+        upload_id = uuid.uuid4().hex
+        self._set_upload(upload_id, filename=filename, owner_id=owner_id, status="queued")
+        return upload_id
+
+    def process_upload(self, upload_id: str, tmp_path: Path, filename: str, owner_id: Optional[str]) -> None:
+        self._set_upload(upload_id, status="processing")
+        try:
+            docs = self._ingest._parse_file(tmp_path)
+            for doc in docs:
+                doc.source_origin = f"upload:{upload_id}"
+                doc.publication_title = filename
+                doc.doi = ""
+                if doc.section == tmp_path.name:
+                    doc.section = filename
+            extra: dict[str, Any] = {
+                "source_type": "upload",
+                "doi": "",
+                "file_kind": docs[0].source_type if docs else "",
+                "upload_id": upload_id,
+                "filename": filename,
+            }
+            if owner_id:
+                extra["owner_id"] = owner_id
+            chunks = self._upsert_docs(docs, extra)
+            if not chunks:
+                raise UnreadableFile("No text found in this file")
+            self._set_upload(upload_id, status="done", chunks=chunks)
+            LOGGER.info("Upload %s (%s) embedded into %s chunks", upload_id, filename, chunks)
+        except Exception as exc:
+            LOGGER.exception("Upload %s (%s) failed", upload_id, filename)
+            message = str(exc) if isinstance(exc, UnreadableFile) else "Could not process this file"
+            self._set_upload(upload_id, status="failed", error=message)
+        finally:
+            tmp_path.unlink(missing_ok=True)
 
     def load_portable_corpus(self) -> int:
         if not PORTABLE_CORPUS.is_file():
@@ -1685,6 +1897,53 @@ async def api_ingest(payload: IngestionRequest, background_tasks: BackgroundTask
 async def api_ingest_oneaquahealth(background_tasks: BackgroundTasks) -> IngestionAck:
     background_tasks.add_task(_seed_oneaquahealth_job)
     return IngestionAck(accepted=True, source="oneaquahealth", indexed=len(ONEAQUAHEALTH_PUBLICATIONS))
+
+
+@app.post("/api/upload", response_model=UploadBatchAck, status_code=202)
+async def api_upload(
+    background_tasks: BackgroundTasks,
+    files: list[UploadFile] = File(...),
+    owner_id: Optional[str] = Form(None),
+) -> UploadBatchAck:
+    if len(files) > UPLOAD_MAX_FILES:
+        raise HTTPException(status_code=400, detail=f"Upload at most {UPLOAD_MAX_FILES} files at a time")
+    owner_id = (owner_id or "").strip() or None
+    if owner_id and not OWNER_ID_RE.match(owner_id):
+        raise HTTPException(status_code=400, detail="owner_id must be 1-64 letters, digits, '-' or '_'")
+
+    results: list[UploadStatus] = []
+    for upload in files:
+        filename = clean_upload_filename(upload.filename)
+        try:
+            data = await upload.read(UPLOAD_MAX_BYTES + 1)
+        finally:
+            await upload.close()
+        if len(data) > UPLOAD_MAX_BYTES:
+            results.append(
+                UploadStatus(filename=filename, status="rejected", error=f"File is larger than {UPLOAD_MAX_MB} MB")
+            )
+            continue
+        try:
+            suffix = detect_upload_suffix(data, filename)
+        except UnreadableFile as exc:
+            results.append(UploadStatus(filename=filename, status="rejected", error=str(exc)))
+            continue
+
+        fd, tmp_name = tempfile.mkstemp(prefix="upload-", suffix=suffix)
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(data)
+        upload_id = ENGINE.queue_upload(filename, owner_id)
+        background_tasks.add_task(ENGINE.process_upload, upload_id, Path(tmp_name), filename, owner_id)
+        results.append(ENGINE.upload_status(upload_id))
+    return UploadBatchAck(uploads=results)
+
+
+@app.get("/api/upload/{upload_id}", response_model=UploadStatus)
+async def api_upload_status(upload_id: str) -> UploadStatus:
+    status = ENGINE.upload_status(upload_id)
+    if status is None:
+        raise HTTPException(status_code=404, detail="Unknown upload_id")
+    return status
 
 
 if (ROOT / "h2o-assets").is_dir():
