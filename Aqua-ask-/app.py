@@ -225,6 +225,67 @@ ONEAQUAHEALTH_PUBLICATIONS = [
 
 PROJECT_FACTS = [
     {
+        "title": "WHO/UNICEF JMP household drinking water, sanitation and hygiene",
+        "doi": "https://washdata.org/data",
+        "url": "https://washdata.org/data",
+        "text": (
+            "The WHO/UNICEF Joint Monitoring Programme (JMP) is the custodian of global estimates "
+            "for household drinking water, sanitation and hygiene since 2000. In Immersive Learning "
+            "this is one embedding dataset among equals, queried the same way as school WASH, "
+            "health-care facility WASH, WHO GLASS, CDC NORS, and climate coverage."
+        ),
+    },
+    {
+        "title": "WHO/UNICEF JMP WASH in Schools",
+        "doi": "https://washdata.org/data/schools",
+        "url": "https://washdata.org/data",
+        "text": (
+            "The WHO/UNICEF JMP schools database records drinking water, sanitation and hygiene "
+            "services in schools. It is a separate health embedding set, equal to household WASH, "
+            "health-care facilities, antimicrobial resistance surveillance, outbreak reporting, and climate."
+        ),
+    },
+    {
+        "title": "WHO/UNICEF JMP WASH in health care facilities",
+        "doi": "https://washdata.org/data/healthcare",
+        "url": "https://washdata.org/data",
+        "text": (
+            "The WHO/UNICEF JMP health-care facility database covers water, sanitation, hand hygiene, "
+            "waste management and environmental cleaning in clinics and hospitals. It is one equal "
+            "embedding dataset in Immersive Learning."
+        ),
+    },
+    {
+        "title": "WHO Global Antimicrobial Resistance and Use Surveillance System (GLASS)",
+        "doi": "https://www.who.int/initiatives/glass",
+        "url": "https://www.who.int/initiatives/glass",
+        "text": (
+            "WHO GLASS is the Global Antimicrobial Resistance and Use Surveillance System. "
+            "Countries report national antimicrobial resistance surveillance through it. "
+            "GLASS is one equal health embedding dataset, not a side note to any single water project."
+        ),
+    },
+    {
+        "title": "CDC National Outbreak Reporting System (NORS)",
+        "doi": "https://www.cdc.gov/nors/",
+        "url": "https://www.cdc.gov/nors/",
+        "text": (
+            "CDC NORS, the National Outbreak Reporting System, records enteric disease outbreaks "
+            "in the United States, including foodborne and waterborne outbreaks. It is one equal "
+            "embedding dataset alongside JMP WASH, WHO GLASS, and climate coverage."
+        ),
+    },
+    {
+        "title": "Climate coverage for coasts, flood, heat and surge",
+        "doi": "climate-coasts",
+        "url": "https://harmony-immersive-learning.onrender.com/Guardians-of-the-Ocean/desktop.html#climate",
+        "text": (
+            "Climate coverage in Immersive Learning maps coastal flood, erosion and storm-surge "
+            "zones together with heat. Climate is queried as an equal embedding dataset with "
+            "household WASH, school WASH, health-care WASH, WHO GLASS and CDC NORS."
+        ),
+    },
+    {
         "title": "OneAquaHealth project website",
         "doi": "https://oneaquahealth.eu",
         "url": "https://oneaquahealth.eu",
@@ -293,6 +354,11 @@ _ALIASES = {
     "odh": ("odh-ut", "terminology", "unified"),
     "terminology": ("odh-ut", "unified"),
     "earth": ("remote", "sensing", "satellite", "airborne"),
+    "wash": ("jmp", "sanitation", "hygiene", "drinking"),
+    "jmp": ("wash", "unicef", "sanitation"),
+    "glass": ("antimicrobial", "resistance", "amr"),
+    "nors": ("outbreak", "foodborne", "cdc"),
+    "climate": ("flood", "surge", "heat", "coast"),
     "observation": ("remote", "sensing", "satellite", "eo"),
     "remote": ("earth", "satellite", "sensing", "airborne"),
     "sensing": ("remote", "earth", "satellite"),
@@ -1672,7 +1738,7 @@ class ImmersiveLearningEngine:
                 continue
             score = self._score_text(blob, terms)
             title = (src.publication_title or "").lower()
-            if title in fact_titles or title == "oneaquahealth project website":
+            if title in fact_titles:
                 score += 24
             if score > 0:
                 scored.append((score, src))

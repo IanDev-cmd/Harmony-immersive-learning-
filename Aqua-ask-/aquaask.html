@@ -111,100 +111,17 @@
   @keyframes breathe{ from{opacity:.55;} to{opacity:1;} }
   @keyframes drift{ from{background-position:0 0, 0 0, 0 0;} to{background-position:180px 90px, -120px 80px, 80px -60px;} }
 
-  /* header — same chrome, other words */
-  .nav-hotzone{
-    position:fixed; top:0; left:0; right:0; height:22px; z-index:40;
-    display:none; cursor:pointer;
+  .back-nav{
+    position:fixed; top:16px; right:16px; z-index:40;
+    appearance:none; cursor:pointer;
+    font:600 12px/1 Inter,Arial,sans-serif;
+    letter-spacing:.08em; text-transform:uppercase;
+    color:#000; background:var(--orange);
+    border:0; border-radius:12px;
+    padding:10px 16px;
+    box-shadow:0 8px 24px rgba(0,0,0,.35);
   }
-  .nav-hotzone::after{
-    content:'';
-    position:absolute; left:50%; top:7px;
-    width:46px; height:4px; border-radius:99px;
-    background:rgba(255,255,255,.42);
-    transform:translateX(-50%);
-    box-shadow:0 1px 8px rgba(0,0,0,.35);
-  }
-  body.has-answer .nav-hotzone{display:block;}
-  body.has-answer .nav-hotzone.is-open::after{opacity:0;}
-  .site-nav-wrap{
-    position:fixed; top:16px; inset-inline:0; z-index:30;
-    display:flex; justify-content:center; padding:0 16px;
-    transition:transform .55s cubic-bezier(.22,1,.36,1);
-  }
-  body.has-answer .site-nav-wrap{
-    transform:translateY(calc(-100% - 28px));
-    pointer-events:none;
-  }
-  body.has-answer .site-nav-wrap.is-shown{
-    transform:translateY(0);
-    pointer-events:auto;
-  }
-  .site-nav{
-    width:100%; max-width:48rem;
-    display:flex; align-items:center; justify-content:space-between;
-    gap:12px;
-    padding:10px 20px;
-    border-radius:16px;
-    border:1px solid rgba(255,130,0,.22);
-    background:rgba(3,6,10,.55);
-    backdrop-filter:blur(16px);
-    -webkit-backdrop-filter:blur(16px);
-    box-shadow:0 8px 32px rgba(0,0,0,.35), 0 2px 8px rgba(255,130,0,.08);
-  }
-  .nav-brand{
-    font-family:'Archivo Black',sans-serif;
-    font-size:.72rem; letter-spacing:.12em; color:var(--white);
-    text-decoration:none;
-    white-space:nowrap;
-  }
-  .nav-links{display:none; align-items:center; gap:14px;}
-  .nav-links a{
-    color:var(--grey); text-decoration:none;
-    font-size:11px; letter-spacing:.06em; font-weight:500;
-    transition:color .2s;
-  }
-  .nav-links a:hover,
-  .nav-links a.is-on{color:var(--white);}
-  .nav-cta{
-    all:unset; cursor:pointer;
-    font-size:11px; letter-spacing:.08em; font-weight:600;
-    padding:8px 16px; border-radius:12px;
-    border:1px solid rgba(255,130,0,.35); color:var(--orange);
-    display:none;
-    text-decoration:none;
-    transition:background .2s, color .2s, border-color .2s;
-  }
-  .nav-cta:hover{background:var(--orange); color:#000; border-color:var(--orange);}
-  .nav-burger{
-    all:unset; cursor:pointer;
-    width:32px; height:32px;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
-    border-radius:8px;
-  }
-  .nav-burger span{display:block; width:18px; height:1px; background:var(--silver); transition:transform .3s, opacity .3s;}
-  .nav-burger.open span:nth-child(1){transform:translateY(6px) rotate(45deg);}
-  .nav-burger.open span:nth-child(2){opacity:0;}
-  .nav-burger.open span:nth-child(3){transform:translateY(-6px) rotate(-45deg);}
-  .nav-mobile{
-    display:none; margin-top:8px;
-    width:100%; max-width:48rem;
-    border-radius:16px; padding:8px;
-    border:1px solid rgba(255,130,0,.22);
-    background:rgba(3,6,10,.72);
-    backdrop-filter:blur(16px);
-  }
-  .nav-mobile.open{display:flex; flex-direction:column;}
-  .nav-mobile a{
-    padding:12px 16px; border-radius:12px;
-    color:var(--grey); font-size:.9rem; letter-spacing:.04em;
-    text-decoration:none;
-  }
-  .nav-mobile a:hover{color:var(--white); background:rgba(255,255,255,.04);}
-  @media (min-width:800px){
-    .nav-links{display:flex;}
-    .nav-cta{display:inline-flex;}
-    .nav-burger{display:none;}
-  }
+  .back-nav:hover{filter:brightness(1.05);}
 
   /* centered ask */
   .ask-core{
@@ -808,41 +725,7 @@
 </style>
 </head>
 <body>
-<div class="nav-hotzone" id="navHotzone" title="Show menu"></div>
-<div class="site-nav-wrap" id="navWrap">
-  <div style="width:100%;max-width:48rem;">
-    <nav class="site-nav" aria-label="Immersive Learning">
-      <a class="nav-brand" href="../index.html">IMMERSIVE</a>
-      <div class="nav-links">
-        <a href="../index.html">Home</a>
-        <a href="./aquaask.html" class="is-on">Ask</a>
-        <a href="../Guardians-of-the-Ocean/desktop.html">Globe</a>
-        <a href="#library">Library</a>
-        <a href="#sources">Sources</a>
-        <a href="#pulse">Pulse</a>
-        <a href="#labs">Labs</a>
-        <a href="#upload">Upload</a>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <a class="nav-cta" href="https://github.com/IanDev-cmd/Harmony-immersive-learning-" target="_blank" rel="noopener">GITHUB</a>
-        <button class="nav-burger" id="navBurger" aria-label="Open menu" aria-expanded="false">
-          <span></span><span></span><span></span>
-        </button>
-      </div>
-    </nav>
-    <div class="nav-mobile" id="navMobile">
-      <a href="../index.html">Home</a>
-      <a href="./aquaask.html">Ask</a>
-      <a href="../Guardians-of-the-Ocean/desktop.html">Globe</a>
-      <a href="#library">Library</a>
-      <a href="#sources">Sources</a>
-      <a href="#pulse">Pulse</a>
-      <a href="#labs">Labs</a>
-      <a href="#upload">Upload</a>
-      <a href="https://github.com/IanDev-cmd/Harmony-immersive-learning-" target="_blank" rel="noopener">GITHUB</a>
-    </div>
-  </div>
-</div>
+<button class="back-nav" id="backNav" type="button">Back</button>
 
 <section class="stage" id="stage" aria-label="Immersive Learning">
   <img class="stage-bg is-on" src="h2o-assets/aquaask-bg-1.jpg" alt="">
@@ -957,20 +840,11 @@
 
 <script>
 (function(){
-  var burger = document.getElementById("navBurger");
-  var mobile = document.getElementById("navMobile");
-  if(burger && mobile){
-    burger.addEventListener("click", function(){
-      var open = mobile.classList.toggle("open");
-      burger.classList.toggle("open", open);
-      burger.setAttribute("aria-expanded", open ? "true" : "false");
-    });
-    mobile.querySelectorAll("a").forEach(function(a){
-      a.addEventListener("click", function(){
-        mobile.classList.remove("open");
-        burger.classList.remove("open");
-        burger.setAttribute("aria-expanded", "false");
-      });
+  var backNav = document.getElementById("backNav");
+  if(backNav){
+    backNav.addEventListener("click", function(){
+      if(history.length > 1) history.back();
+      else location.href = "../index.html";
     });
   }
 
@@ -984,7 +858,6 @@
     toastTimer = setTimeout(function(){ toast.classList.remove("show"); }, 2400);
   }
 
-  var GITHUB_URL = "https://github.com/IanDev-cmd/Harmony-immersive-learning-";
   var API_BASE = "";
   if (location.protocol === "file:" || location.hostname === "127.0.0.1" || location.hostname === "localhost") {
     API_BASE = "http://127.0.0.1:8001";
@@ -1115,12 +988,9 @@
   var theaterStatus = document.getElementById("theaterStatus");
   var slideNum = document.getElementById("slideNum");
   var slideTrack = document.getElementById("slideTrack");
-  var navWrap = document.getElementById("navWrap");
-  var navHotzone = document.getElementById("navHotzone");
   var lastQuestion = "";
   var slide = 0;
   var aiOn = false;
-  var navPinned = false;
   var theaterTimer = 0;
   var theaterSpawn = 0;
   var theaterStarted = 0;
@@ -1292,23 +1162,9 @@
       if(typeof done === "function") done();
     }, wait);
   }
-  function showNav(){
-    if(!navWrap) return;
-    navWrap.classList.add("is-shown");
-    if(navHotzone) navHotzone.classList.add("is-open");
-  }
-  function hideNav(){
-    if(navPinned) return;
-    if(navWrap) navWrap.classList.remove("is-shown");
-    if(navHotzone) navHotzone.classList.remove("is-open");
-  }
   function setAnswerMode(on){
     document.body.classList.toggle("has-answer", on);
     if(stage) stage.classList.toggle("has-answer", on);
-    if(!on){
-      navPinned = false;
-      hideNav();
-    }
   }
   function highlightCite(id){
     document.querySelectorAll(".cite, .source-tile").forEach(function(el){
@@ -1609,27 +1465,6 @@
       clearTimeout(timer);
     });
   }
-
-  if(navHotzone){
-    navHotzone.addEventListener("mouseenter", showNav);
-    navHotzone.addEventListener("click", function(){
-      navPinned = !navPinned;
-      if(navPinned) showNav();
-      else hideNav();
-    });
-  }
-  if(navWrap){
-    navWrap.addEventListener("mouseenter", showNav);
-    navWrap.addEventListener("mouseleave", hideNav);
-    navWrap.addEventListener("click", function(){ navPinned = true; showNav(); });
-  }
-  document.addEventListener("click", function(e){
-    if(!document.body.classList.contains("has-answer")) return;
-    if(navWrap && navWrap.contains(e.target)) return;
-    if(navHotzone && navHotzone.contains(e.target)) return;
-    navPinned = false;
-    hideNav();
-  });
 
   var aiBtn = document.getElementById("aiBtn");
   if(aiBtn){
