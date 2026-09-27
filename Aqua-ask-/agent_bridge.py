@@ -4,10 +4,9 @@ from __future__ import annotations
 import os
 import threading
 import time
-from typing import Optional
+from typing import Any, Optional
 
-from fastapi import APIRouter, Header, HTTPException
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Header, HTTPException, Request
 
 router = APIRouter()
 _lock = threading.Lock()
@@ -17,6 +16,9 @@ _state = {
     "detail": "",
     "at": 0.0,
 }
+_logs: list[dict[str, Any]] = []
+_log_id = 0
+_warned_open = False
 
 ACTIONS = {
     "open_home": "Opening the home screen.",
@@ -35,9 +37,13 @@ ACTIONS = {
 }
 
 
-class AgentCommand(BaseModel):
-    action: str = Field(description="UX action to run in the open browser.")
-    detail: str = Field(default="", description="City, card, question, or layer.")
+def _log(level: str, message: str) -> None:
+    global _log_id
+    with _lock:
+        _log_id += 1
+        _logs.append({"id": _log_id, "t": time.time(), "level": level, "message": message})
+        if len(_logs) > 200:
+            del _logs[:-200]
 
 
 def _secret() -> str:
@@ -61,17 +67,33 @@ def _authorized(header_secret: Optional[str], authorization: Optional[str]) -> b
 
 
 @router.post("/api/agent/command")
-def post_command(
-    body: AgentCommand,
+async def post_command(
+    request: Request,
     x_agent_secret: Optional[str] = Header(default=None),
     authorization: Optional[str] = Header(default=None),
 ):
+    global _warned_open
+    if not _secret() and not _warned_open:
+        _warned_open = True
+        _log("warn", "AGENT_WEBHOOK_SECRET is empty, so the webhook is unlocked")
     if not _authorized(x_agent_secret, authorization):
+        present = bool((x_agent_secret or "").strip() or (authorization or "").strip())
+        _log("error", "webhook rejected 401: " + ("secret does not match" if present else "X-Agent-Secret header missing"))
         raise HTTPException(status_code=401, detail="Invalid agent secret.")
-    action = (body.action or "").strip().lower().replace(" ", "_").replace("-", "_")
+    try:
+        raw = await request.json()
+    except Exception:
+        _log("error", "webhook rejected 400: body was not JSON")
+        raise HTTPException(status_code=400, detail="Body must be JSON with action.")
+    if not isinstance(raw, dict):
+        _log("error", "webhook rejected 400: body was not an object")
+        raise HTTPException(status_code=400, detail="Body must be a JSON object.")
+    action = str(raw.get("action") or "").strip().lower().replace(" ", "_").replace("-", "_")
+    detail_raw = raw.get("detail")
+    detail = "" if detail_raw is None else str(detail_raw).strip()
     if action not in ACTIONS:
+        _log("error", "webhook rejected 400: unknown action " + (action or "(empty)"))
         raise HTTPException(status_code=400, detail="Unknown action. Use one of: " + ", ".join(ACTIONS))
-    detail = (body.detail or "").strip()
     with _lock:
         _state["id"] += 1
         _state["action"] = action
@@ -81,6 +103,7 @@ def post_command(
     said = ACTIONS[action]
     if detail and action in ("open_maps", "search_city", "open_card", "open_ask", "set_layer"):
         said = said[:-1] + ": " + detail + "."
+    _log("ok", "webhook stored #" + str(command_id) + " " + action + ((" " + detail) if detail else ""))
     return {
         "ok": True,
         "id": command_id,
@@ -102,3 +125,10 @@ def get_command(since: int = 0):
             "at": _state["at"],
         }
     return {"ok": True, "command": command}
+
+
+@router.get("/api/agent/logs")
+def get_logs(since: int = 0):
+    with _lock:
+        rows = [row for row in _logs if row["id"] > since]
+    return {"ok": True, "logs": rows}

@@ -6,6 +6,11 @@
   var SINCE_KEY = "il-agent-since";
   var PENDING_KEY = "il-agent-pending";
 
+  function log(level, message) {
+    if (window.ILLog) window.ILLog(level, message);
+    else (window.__ILLogQ = window.__ILLogQ || []).push([level, message]);
+  }
+
   function pageKind() {
     var path = location.pathname;
     if (path.indexOf("desktop.html") !== -1) return "globe";
@@ -140,6 +145,7 @@
 
   function go(command) {
     var target = needsPage(command.action);
+    log("ok", "command #" + command.id + " " + command.action + (command.detail ? " " + command.detail : "") + " on " + pageKind());
     if (pageKind() !== target) {
       var dest = urls()[target];
       if (command.action === "open_ask" && command.detail && target === "ask") {
@@ -149,15 +155,18 @@
       }
       sessionStorage.setItem(PENDING_KEY, JSON.stringify(command));
       if (command.action === "open_maps") dest += "#roadmap";
+      log("info", "navigate to " + dest);
       location.href = dest;
       return;
     }
     var tries = 0;
     var timer = setInterval(function () {
       tries += 1;
-      if (runHere(command) || tries > 25) {
+      var done = runHere(command);
+      if (done || tries > 25) {
         clearInterval(timer);
         sessionStorage.removeItem(PENDING_KEY);
+        log(done ? "ok" : "error", done ? "ran " + command.action : "gave up on " + command.action);
       }
     }, 200);
   }
@@ -172,19 +181,49 @@
     try { go(JSON.parse(raw)); } catch (err) { sessionStorage.removeItem(PENDING_KEY); }
   }
 
+  var pollNoted = false;
+  var logSince = 0;
   function poll() {
     var since = localStorage.getItem(SINCE_KEY) || "0";
     fetch(ORIGIN + "/api/agent/command?since=" + encodeURIComponent(since))
-      .then(function (res) { return res.json(); })
+      .then(function (res) {
+        return res.text().then(function (text) {
+          if (!res.ok) {
+            log("error", "command poll " + res.status + " from " + ORIGIN + " " + text.slice(0, 160));
+            return null;
+          }
+          if (!pollNoted) {
+            pollNoted = true;
+            log("info", "bridge reachable at " + ORIGIN);
+          }
+          try { return JSON.parse(text); } catch (err) {
+            log("error", "command poll returned non-JSON");
+            return null;
+          }
+        });
+      })
       .then(function (data) {
         var command = data && data.command;
         if (!command || !command.id) return;
         remember(command.id);
         go(command);
       })
+      .catch(function (err) {
+        log("error", "command poll failed: " + (err && err.message ? err.message : "network"));
+      });
+    fetch(ORIGIN + "/api/agent/logs?since=" + logSince)
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (data) {
+        var rows = (data && data.logs) || [];
+        rows.forEach(function (row) {
+          logSince = row.id;
+          log(row.level === "error" ? "error" : row.level === "ok" ? "ok" : "info", "server: " + row.message);
+        });
+      })
       .catch(function () {});
   }
 
+  log("info", "bridge listening on the " + pageKind() + " page");
   bootPending();
   setInterval(poll, 1200);
   poll();
