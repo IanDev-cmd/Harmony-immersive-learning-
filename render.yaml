@@ -1,5 +1,6 @@
-# Immersive Learning — one Blueprint for the Harmony repo (branch main).
-# Static site serves the home screen, 3D globe, Ask page and the mobile hub (/mobile/).
+# Immersive Learning — one Blueprint for https://github.com/IanDev-cmd/Harmony-immersive-learning- (branch main).
+# Public site: https://harmony-immersive-learning.onrender.com
+# Ask API stays https://aqua-ask.onrender.com (this same repo, Docker). The static site cannot run that API.
 # Ask (Docker) and the Harmony API (Node: Stripe, M-Pesa, Airtel, SMS/USSD/voice) stay on the
 # $7 Starter plan so they do not sleep. Setup guide: Guardians-of-the-Ocean/server/README.md
 
@@ -46,7 +47,7 @@ services:
       - key: CHROMA_DIR
         value: /app/chroma_db
       - key: PUBLIC_APP_URL
-        value: https://aqua-ask.onrender.com
+        value: https://harmony-immersive-learning.onrender.com
       - key: GITHUB_REPO_URL
         value: https://github.com/IanDev-cmd/Harmony-immersive-learning-
       - key: XAI_MODEL

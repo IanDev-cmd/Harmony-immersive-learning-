@@ -38,7 +38,7 @@ Then open `http://127.0.0.1:8765/`. Mobile / standalone sessions land on the PWA
 | `assets/content/` | Static content indexes |
 | `pwa/island-weather-pwa/` | Ledger PWA shell |
 | `sw.js` | App-shell cache (network-first navigations, cache-first tiles/images) |
-| `render.yaml` | Render static site (`guardians-of-the-ocean`) |
+| `render.yaml` | Render blueprint for https://harmony-immersive-learning.onrender.com |
 
 Install uses `manifest.webmanifest` (`start_url` is the PWA). Hosted as a static site — not the weott-proposal-engine Render service.
 
@@ -47,7 +47,7 @@ Install uses `manifest.webmanifest` (`start_url` is the PWA). Hosted as a static
 This is **not** a Web Service. There is no `yarn start`.
 
 1. **New → Static Site** (URL should be `dashboard.render.com/static/new`).
-2. Connect `IanDev-cmd/Guardians-of-the-Ocean`, branch `main`.
+2. Connect `IanDev-cmd/Harmony-immersive-learning-`, branch `main`. The public site is https://harmony-immersive-learning.onrender.com.
 3. Fields:
    - **Build Command:** `true`  
      (`true` is a no-op. Do **not** type `static` — Render will try to run it as a program and fail.)

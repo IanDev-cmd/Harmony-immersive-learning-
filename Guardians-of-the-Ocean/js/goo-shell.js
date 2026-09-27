@@ -7,7 +7,7 @@
   var Sound = GOO.Sound;
   var Notify = GOO.Notify;
   var Compass = GOO.Compass;
-  var SHARE_URL = (location.origin && location.origin !== 'null') ? location.href : 'https://github.com/IanDev-cmd/Guardians-of-the-Ocean';
+  var SHARE_URL = (location.origin && location.origin !== 'null') ? location.href : 'https://harmony-immersive-learning.onrender.com';
   var SHARE_TEXT = 'Immersive Learning — live coastal restoration, 3D globe and 2D maps.';
   var TUTORIAL_KEY = 'goo-tutorial-v1';
   var deferredPrompt = null;

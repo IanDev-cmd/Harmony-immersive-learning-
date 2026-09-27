@@ -1,5 +1,6 @@
 /* Polls the Ask service for voice-agent commands and runs the matching UX control. */
 (function () {
+  // Pages are served by harmony-immersive-learning. Commands are stored on the Ask API.
   var ORIGIN = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
     ? "http://127.0.0.1:8001"
     : "https://aqua-ask.onrender.com";

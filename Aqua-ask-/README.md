@@ -2,8 +2,9 @@
 
 OneAquaHealth IEEE Global Hackathon — AI search over OneAquaHealth publications.
 
-- **Live:** https://aqua-ask.onrender.com
-- **Code:** https://github.com/IanDev-cmd/Aqua-ask-
+- **Live:** https://harmony-immersive-learning.onrender.com
+- **Ask API:** https://aqua-ask.onrender.com
+- **Code:** https://github.com/IanDev-cmd/Harmony-immersive-learning-
 
 ## Local
 

@@ -131,4 +131,4 @@ Unchanged. Run `stripe listen --forward-to localhost:8787/api/webhooks/stripe` l
 
 ## Deploy
 
-`render.yaml` at the repo root deploys this as `guardians-stripe`. The build installs dev dependencies (TypeScript and the Prisma CLI) and runs migrations on start. Add the gateway keys in the Render dashboard as you get them. Each channel switches from practice to live on its own.
+`render.yaml` at the repo root (`https://github.com/IanDev-cmd/Harmony-immersive-learning-`) deploys this as `guardians-stripe`. The public site is https://harmony-immersive-learning.onrender.com. The build installs dev dependencies (TypeScript and the Prisma CLI) and runs migrations on start. Add the gateway keys in the Render dashboard as you get them. Each channel switches from practice to live on its own.
