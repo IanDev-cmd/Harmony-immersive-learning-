@@ -17,7 +17,8 @@
   var style = document.createElement("style");
   style.textContent = [
     ".il-jumps{position:fixed;z-index:80;top:14px;left:14px;display:flex;flex-wrap:wrap;gap:8px;max-width:calc(100vw - 28px);}",
-    "body.il-on-globe .il-jumps{display:none;}",
+    "body.il-on-globe .il-jumps,body.il-on-home .il-jumps{display:none;}",
+    "body.il-on-home .il-gear{top:18px;}",
     ".il-jumps a,.il-jumps button{appearance:none;border:0;cursor:pointer;text-decoration:none;",
     "font:600 13px/1 Inter,Arial,sans-serif;color:#12202c;background:#fff;border-radius:999px;",
     "padding:10px 14px;box-shadow:0 2px 10px rgba(0,0,0,.28);}",
@@ -35,32 +36,35 @@
   ].join("");
   document.head.appendChild(style);
   if (here === "globe") document.body.classList.add("il-on-globe");
+  if (here === "home") document.body.classList.add("il-on-home");
 
-  var nav = document.createElement("div");
-  nav.className = "il-jumps";
-  nav.setAttribute("aria-label", "Pages");
-  var back = document.createElement("button");
-  back.type = "button";
-  back.textContent = "Back";
-  back.addEventListener("click", function () {
-    if (history.length > 1) history.back();
-    else location.href = homeHref;
-  });
-  nav.appendChild(back);
+  if (here !== "home") {
+    var nav = document.createElement("div");
+    nav.className = "il-jumps";
+    nav.setAttribute("aria-label", "Pages");
+    var back = document.createElement("button");
+    back.type = "button";
+    back.textContent = "Back";
+    back.addEventListener("click", function () {
+      if (history.length > 1) history.back();
+      else location.href = homeHref;
+    });
+    nav.appendChild(back);
 
-  [
-    ["Home", homeHref, "home"],
-    ["3D Globe", globeHref, "globe"],
-    ["Ask", askHref, "ask"],
-    ["Mobile", mobileHref, "mobile"]
-  ].forEach(function (item) {
-    var a = document.createElement("a");
-    a.href = item[1];
-    a.textContent = item[0];
-    if (item[2] === here) a.className = "is-on";
-    nav.appendChild(a);
-  });
-  document.body.appendChild(nav);
+    [
+      ["Home", homeHref, "home"],
+      ["3D Globe", globeHref, "globe"],
+      ["Ask", askHref, "ask"],
+      ["Mobile", mobileHref, "mobile"]
+    ].forEach(function (item) {
+      var a = document.createElement("a");
+      a.href = item[1];
+      a.textContent = item[0];
+      if (item[2] === here) a.className = "is-on";
+      nav.appendChild(a);
+    });
+    document.body.appendChild(nav);
+  }
 
   var gear = document.createElement("button");
   gear.type = "button";
