@@ -126,6 +126,7 @@
       this.bell.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5"/><path d="M9 17a3 3 0 0 0 6 0"/></svg><i class="n-badge" hidden>0</i>';
       document.body.appendChild(this.bell);
       this.badge = this.bell.querySelector('.n-badge');
+      this.dockEquator();
 
       this.panel = document.createElement('div');
       this.panel.className = 'n-panel';
@@ -160,6 +161,7 @@
       this.crewBtn.setAttribute('aria-label', 'Field crew reviews');
       this.crewBtn.innerHTML = avaHtml(lead, 'lead');
       document.body.appendChild(this.crewBtn);
+      this.dockEquator();
 
       this.crew = document.createElement('div');
       this.crew.className = 'n-crew';
@@ -217,6 +219,12 @@
         }
         e.stopPropagation();
       });
+    },
+    dockEquator: function () {
+      var slot = document.getElementById('equatorTools');
+      if (!slot) return;
+      if (this.crewBtn) slot.appendChild(this.crewBtn);
+      if (this.bell) slot.appendChild(this.bell);
     },
     closeCrew: function () {
       if (this.crew) this.crew.classList.remove('open');
