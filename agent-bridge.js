@@ -192,6 +192,7 @@
   }
 
   var pollNoted = false;
+  var pollMisses = 0;
   var logSince = 0;
   function poll() {
     var since = localStorage.getItem(SINCE_KEY) || "0";
@@ -199,9 +200,13 @@
       .then(function (res) {
         return res.text().then(function (text) {
           if (!res.ok) {
-            log("error", "command poll " + res.status + " from " + ORIGIN + " " + text.slice(0, 160));
+            pollMisses += 1;
+            if (pollMisses === 1 || pollMisses % 25 === 0) {
+              log("error", "command poll " + res.status + " from " + ORIGIN + " " + text.slice(0, 160));
+            }
             return null;
           }
+          pollMisses = 0;
           if (!pollNoted) {
             pollNoted = true;
             log("info", "bridge reachable at " + ORIGIN);

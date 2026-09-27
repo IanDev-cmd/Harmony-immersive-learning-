@@ -1561,7 +1561,10 @@
   function revealAnswer(data, failed){
     stopTheater(function(){
       if(failed){
-        replies = ["Immersive Learning could not reach the knowledge engine. Confirm the API is running on port 8001 and try again."];
+        var local = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+        replies = [local
+          ? "Immersive Learning could not reach the knowledge engine. Confirm the API is running on port 8001 and try again."
+          : "Immersive Learning could not reach the knowledge engine on this site. /api/search was not found, so this host is still serving files only."];
         sourceList = [];
         renderDock();
         slide = 0;
