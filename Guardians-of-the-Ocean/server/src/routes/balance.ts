@@ -20,13 +20,16 @@ function emailOf(raw: unknown): string {
   return value;
 }
 
-export function createBalanceHandler(stripe: Stripe) {
+export type MobileLedger = () => Promise<unknown>;
+
+export function createBalanceHandler(stripe: Stripe, mobileLedger?: MobileLedger) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const email = emailOf(req.query.email);
       const fieldShare = 85;
 
-      const [paidAgg, pendingAgg, personalPaid, personalPending, recent, stripeBal] = await Promise.all([
+      const [mobile, paidAgg, pendingAgg, personalPaid, personalPending, recent, stripeBal] = await Promise.all([
+        mobileLedger ? mobileLedger().catch(() => null) : Promise.resolve(null),
         prisma.order.aggregate({
           where: { status: "paid" },
           _sum: { amount: true },
@@ -143,6 +146,7 @@ export function createBalanceHandler(stripe: Stripe) {
           paidCount: paidAgg._count,
           paid: money(paidCents, currency),
         },
+        mobile,
       });
     } catch (err) {
       next(err);
@@ -171,6 +175,33 @@ export function createOrderStatusHandler() {
         email: order.user.email,
         orderId: order.id,
         fulfilled: order.status === "paid",
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+}
+
+/** Ledger shape for servers without Stripe: card figures read zero, mobile money is live. */
+export function createMobileOnlyLedgerHandler(mobileLedger: MobileLedger) {
+  return async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const zero = { cents: 0, count: 0, label: money(0, "usd") };
+      res.json({
+        live: false,
+        currency: "usd",
+        fund: {
+          available: { ...zero, status: "EMPTY" },
+          pending: zero,
+          paid: zero,
+          split: { field: 85, ops: 15, label: "85/15 SPLIT" },
+        },
+        personal: { email: null, status: "CARD OFF", paid: zero, pending: zero, recent: [] },
+        operating: { ...zero, status: "EMPTY" },
+        payoutQueue: { cents: 0, count: 0, label: "0 PENDING" },
+        spendSplit: { field: 85, ops: 15, label: "85/15 SPLIT" },
+        ledger: { paidCount: 0, paid: money(0, "usd") },
+        mobile: await mobileLedger(),
       });
     } catch (err) {
       next(err);

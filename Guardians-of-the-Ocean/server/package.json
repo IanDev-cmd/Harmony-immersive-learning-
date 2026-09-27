@@ -2,14 +2,16 @@
   "name": "guardians-stripe",
   "private": true,
   "version": "1.0.0",
-  "description": "Stripe Checkout + webhook API for Immersive Learning",
+  "description": "Harmony API: Stripe card checkout, M-Pesa and Airtel Money STK push, and SMS / USSD / voice access for students",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate deploy"
+    "prisma:migrate": "prisma migrate deploy",
+    "test": "tsx --test src/test/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "engines": {
     "node": ">=20"

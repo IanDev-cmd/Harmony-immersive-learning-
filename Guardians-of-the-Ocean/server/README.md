@@ -1,66 +1,134 @@
-# Stripe Checkout API
+# Harmony API
 
-Production Node/Express + Prisma/PostgreSQL service for Immersive Learning. The live site stays a static Render app. This folder is the payment backend. Fulfillment happens **only** in the webhook handler — never from the success URL.
+Node/Express + Prisma/PostgreSQL service behind Immersive Learning. It handles:
 
-The desktop Wallet Overview button posts to `POST /api/checkout`, then redirects with `window.location.href = session.url`.
+- **Card payments** through Stripe Checkout (the original service). Fulfillment still happens only in the webhook handler, never from the success URL.
+- **Mobile money** through M-Pesa Express (Safaricom Daraja STK push) and Airtel Money (Airtel Africa collection / USSD push).
+- **Students on any phone**: two-way SMS, a USSD menu and a voice IVR through Africa's Talking.
+- **The learning agent**: one brain for every channel. It asks Aqua Ask (RAG over the research library), falls back to built-in lessons, and hands off to a **human guide** by SMS relay or a free call-back.
+
+The student web app is `/mobile/` at the repo root. The guide desk is `/mobile/agent.html`.
+
+Every gateway is optional. If a gateway's keys are missing, that channel runs in **practice mode**: SMS goes to an outbox, PIN prompts appear on the browser phone simulator, and no real money moves. You can demo the whole thing with zero accounts.
+
+## Run locally
+
+```bash
+cd Guardians-of-the-Ocean/server
+npm install
+npx prisma generate
+npm run dev            # API on :8787, in-memory store, practice mode
+```
+
+In another terminal, serve the site from the repo root:
+
+```bash
+python -m http.server 8765
+```
+
+Open `http://127.0.0.1:8765/mobile/`. On desktop the feature-phone simulator sits on the right. Dial the USSD code, text `HELP`, call Harmony, or pay from the Support tab and approve with any 4-digit PIN on the simulated phone.
+
+If port 8787 is taken, run with `PORT=8790` and point the site at it in the browser console:
+
+```js
+localStorage.setItem('goo-api', 'http://127.0.0.1:8790');
+```
+
+Tests:
+
+```bash
+npm test
+npm run typecheck
+```
 
 ## Environment
 
-Copy `.env.example` to `.env` (never commit `.env`):
+See `.env.example` for the full list. The main groups:
 
 | Variable | Purpose |
 | --- | --- |
-| `DATABASE_URL` | PostgreSQL connection string |
-| `STRIPE_SECRET_KEY` | `sk_test_…` or `sk_live_…` |
-| `STRIPE_WEBHOOK_SECRET` | `whsec_…` from `stripe listen` or the Dashboard |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Publishable key (hosted Checkout does not need it in the browser; kept for Stripe.js if you add Elements later) |
-| `FRONTEND_ORIGIN` | CORS allow-list, comma-separated (`https://guardians-of-the-ocean1.onrender.com,http://127.0.0.1:8765`) |
-| `APP_BASE_URL` | Public site origin used in `success_url` / `cancel_url` |
-| `PORT` | API port (default `8787`) |
-| `CHECKOUT_USER_SECRET` | Optional. If set, Checkout requires `Authorization: Bearer …` |
-| `CHECKOUT_AMOUNT_CENTS` | Default line item (2500 = $25) |
-| `CHECKOUT_CURRENCY` | `usd` |
+| `DATABASE_URL` | PostgreSQL. Without it, students and mobile payments live in memory. Stripe also needs it. |
+| `PUBLIC_API_URL` | This API's public origin, used in callback URLs. Render provides `RENDER_EXTERNAL_URL` automatically. |
+| `CALLBACK_TOKEN` | Secret path segment on every provider callback. Use hex (`openssl rand -hex 24`), because it goes in URLs. |
+| `ADMIN_TOKEN` | Bearer token for the guide desk and lesson broadcasts. |
+| `DEV_TOOLS` | Simulator and practice payments. On by default outside production. In production it stays on only while no real gateway is configured. |
+| `STRIPE_*`, `CHECKOUT_*` | Card checkout, unchanged. |
+| `AT_USERNAME`, `AT_API_KEY`, `AT_SMS_FROM`, `AT_VOICE_NUMBER`, `USSD_CODE`, `SMS_SHORTCODE` | Africa's Talking. |
+| `MPESA_*` | Daraja app keys, shortcode and passkey. `MPESA_TYPE=till` for Buy Goods. |
+| `AIRTEL_*` | Airtel Africa collection app. |
+| `AQUA_ASK_URL`, `GOOGLE_API_KEY`, `AGENT_PHONES` | The agent, voice transcription, and the human guides. |
 
-## Local
+## Connect the gateways
 
-```bash
-cd server
-npm install
-npx prisma generate
-npx prisma migrate deploy
-npm run dev
-```
+Replace `API` with your public API origin and `TOKEN` with `CALLBACK_TOKEN`.
 
-In another terminal:
+### Africa's Talking (SMS, USSD, voice)
 
-```bash
-stripe listen --forward-to localhost:8787/api/webhooks/stripe
-```
+1. Create an app, then set `AT_USERNAME` and `AT_API_KEY`. The username `sandbox` targets the sandbox and its simulator.
+2. **USSD**: create a service code, then set its callback to `API/api/at/TOKEN/ussd`.
+3. **SMS**: on your shortcode, set the incoming-messages callback to `API/api/at/TOKEN/sms` and the delivery-reports callback to `API/api/at/TOKEN/delivery`. Set `AT_SMS_FROM` to the shortcode or sender ID.
+4. **Voice**: on your voice number, set the callback to `API/api/at/TOKEN/voice`, and set `AT_VOICE_NUMBER`.
+5. Set `AGENT_PHONES` to the numbers of your human guides.
 
-Point the static site at the API:
+### M-Pesa (Daraja, M-Pesa Express)
 
-```js
-localStorage.setItem('goo-api', 'http://127.0.0.1:8787');
-```
+1. Create a Daraja app with M-Pesa Express, then set `MPESA_CONSUMER_KEY` and `MPESA_CONSUMER_SECRET`.
+2. Sandbox: use the test shortcode and passkey from the Daraja portal. Production: use your paybill or till and the passkey Safaricom issues when you go live, and set `MPESA_ENV=production`.
+3. The STK callback URL is sent with every request (`API/api/pay/mpesa/callback/TOKEN`), so there is nothing to configure on the portal. Daraja does not sign callbacks. The secret path, the idempotent settle and a status query fallback cover that.
 
-Then open Wallet Overview and use **Checkout**.
+### Airtel Money (Airtel Africa Open API)
+
+1. Create an app with the Collection product (KE / KES), then set `AIRTEL_CLIENT_ID` and `AIRTEL_CLIENT_SECRET`.
+2. Set the collection callback URL on the app to `API/api/pay/airtel/callback/TOKEN`.
+3. If your Airtel app has message signing turned on, the request encryption headers still need adding in `src/payments/airtel.ts`.
+
+### Stripe
+
+Unchanged. Run `stripe listen --forward-to localhost:8787/api/webhooks/stripe` locally. The site's Card option calls `POST /api/checkout`.
 
 ## Routes
 
-- `POST /api/checkout` — authenticate (optional bearer), upsert user, create Stripe Customer, create Checkout Session, insert `pending` order, return `{ url }`
-- `POST /api/webhooks/stripe` — raw body + `constructEvent`, idempotent via `stripe_events.id`
-- `GET /api/balance` — Stripe Balance + paid/pending order aggregates for the wallet card
-- `GET /api/orders/status?session_id=` — success-page polling (display only)
+**Web app**
 
-Webhook events: `checkout.session.completed`, `payment_intent.payment_failed`, `customer.subscription.deleted`.
+- `GET /api/mobile/config`: codes, channel modes, lessons, amounts.
+- `POST /api/students/join`: opts a student in and sends the first lesson by SMS.
+- `POST /api/agent/ask`: asks the agent. Can also text the answer.
+- `POST /api/agent/callback`: opens a guide ticket, alerts guides, and rings the student.
+- `POST /api/pay/mobile` `{ phone, amount, provider? }`: sends the M-Pesa or Airtel PIN prompt. The provider is picked from the number when omitted.
+- `GET /api/pay/mobile/:id`: status. It asks the provider directly if the callback is late.
+- `GET /api/mobile/ledger`, `GET /api/ledger`: totals. `/api/ledger` also carries the Stripe figures.
+
+**Provider callbacks** (all behind `CALLBACK_TOKEN`)
+
+- `POST /api/pay/mpesa/callback/:token`, `POST /api/pay/airtel/callback/:token`
+- `POST /api/at/:token/ussd | sms | delivery | voice | voice/menu | voice/question | voice/pay`
+
+**Guide desk** (`Authorization: Bearer ADMIN_TOKEN`)
+
+- `GET /api/agent/tickets?status=handoff|answered|all`
+- `POST /api/agent/tickets/:id/reply`, `POST /api/agent/tickets/:id/close`
+- `POST /api/admin/broadcast`: sends the next lesson to every subscriber. You can call it from a daily cron.
+
+**Simulator** (only with `DEV_TOOLS`): `/api/dev/ussd`, `/api/dev/sms`, `/api/dev/voice/*`, `/api/dev/phone/:phone`, `/api/dev/prompts/:ref`.
+
+**Card**: `POST /api/checkout`, `POST /api/webhooks/stripe`, `GET /api/orders/status`. These answer 503 until Stripe is configured.
+
+## What students can do without data
+
+| Channel | How |
+| --- | --- |
+| USSD `*384*2026#` | Lessons, quiz, ask a question (answered by SMS), guide call-back, support with M-Pesa or Airtel, progress, daily SMS opt-in. |
+| SMS to the shortcode | `JOIN`, `LESSON`, `QUIZ` then `A`/`B`/`C`, `ASK <question>` or any free text, `AGENT`, `PAY 100`, `POINTS`, `STOP`, `HELP`. Kiswahili aliases: `ANZA`, `SOMO`, `SWALI`, `ULIZA`, `MSAADA`, `CHANGIA`, `ACHA`. |
+| Voice line | 1 lesson (read aloud), 2 say a question (answered by SMS), 3 talk to a guide, 4 support with mobile money. |
+| Guides | Get an SMS for every ticket and reply from their own phone with `R <code> <message>`, or use the guide desk. |
+
+## Safety notes
+
+- Web endpoints that make a phone buzz (join, callback, pay) are rate-limited per number and per IP.
+- Payments settle exactly once (a conditional update), so retried callbacks never double-count or re-send a receipt.
+- Voice recordings are only fetched from Africa's Talking hosts before transcription.
+- Logs mask phone numbers (`0712 ***678`).
 
 ## Deploy
 
-Create a **separate** Render Web Service from `server/` (do not convert the static site). Set the env vars above, add a PostgreSQL database, then:
-
-- Build: `npm install && npx prisma generate && npm run build`
-- Start: `npx prisma migrate deploy && node dist/index.js`
-
-In the static site, set `js/goo-config.js` or `localStorage.goo-api` to that service URL.
-
-React/Next.js copies of the button and App Router handlers live in `/stripe-ui` if you later wrap this UI in Next. The hosted product remains vanilla HTML.
+`render.yaml` at the repo root deploys this as `guardians-stripe`. The build installs dev dependencies (TypeScript and the Prisma CLI) and runs migrations on start. Add the gateway keys in the Render dashboard as you get them. Each channel switches from practice to live on its own.

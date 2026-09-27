@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#03121a">
+<meta name="robots" content="noindex">
+<title>Harmony Guide Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="mobile.css">
+<style>
+  body{padding-bottom:40px}
+  .desk-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;margin:22px 0 16px}
+  .desk-head h1{font:600 28px/1.1 var(--display);margin:0}
+  .desk-head p{margin:6px 0 0;color:var(--ink-2)}
+  .stats{display:flex;gap:10px;flex-wrap:wrap}
+  .stat{padding:10px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--line);min-width:110px}
+  .stat b{display:block;font:600 22px/1.1 var(--display)}
+  .stat span{font-size:12px;color:var(--muted)}
+  .empty{padding:40px 20px;text-align:center;color:var(--muted);border:1px dashed var(--line-2);border-radius:18px}
+  .ch{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--ink-2)}
+</style>
+</head>
+<body>
+<header class="appbar">
+  <a class="brand" href="./">
+    <span class="brand-mark" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#022028" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span>
+    <span>Guide desk<small>Harmony Mobile</small></span>
+  </a>
+  <span class="appbar-spacer"></span>
+  <span class="pill" id="live"><span class="dot"></span><span>Auto-refresh</span></span>
+</header>
+
+<main class="shell">
+  <div class="card hidden" id="lock">
+    <h2>Sign in to the guide desk</h2>
+    <p class="lede">Paste the desk token (ADMIN_TOKEN on the Harmony server). It stays in this browser tab only.</p>
+    <form id="lockForm">
+      <label class="field"><span>Desk token</span><input class="input" id="token" type="password" autocomplete="current-password" required></label>
+      <button class="btn" type="submit">Open desk</button>
+      <div class="alert err" id="lockErr" role="alert"></div>
+    </form>
+  </div>
+
+  <div id="desk" class="hidden">
+    <div class="desk-head">
+      <div>
+        <h1>Students waiting for a guide</h1>
+        <p>Reply here and it goes out as an SMS. Guides can also reply from their own phone with <code>R CODE message</code>.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><b id="sWaiting">0</b><span>waiting</span></div>
+        <div class="stat"><b id="sAnswered">0</b><span>answered by AI or guide</span></div>
+      </div>
+    </div>
+
+    <div class="filters" role="group" aria-label="Filter tickets">
+      <button class="sim-line" type="button" data-filter="handoff" aria-pressed="true">Needs a person</button>
+      <button class="sim-line" type="button" data-filter="answered" aria-pressed="false">Answered</button>
+      <button class="sim-line" type="button" data-filter="all" aria-pressed="false">All</button>
+      <span style="flex:1"></span>
+      <button class="btn small ghost" type="button" id="broadcast">Send today's lesson to all subscribers</button>
+    </div>
+    <div class="alert ok" id="deskMsg" role="status"></div>
+    <div class="console-grid" id="tickets" aria-live="polite"></div>
+  </div>
+</main>
+
+<script src="../Guardians-of-the-Ocean/js/goo-config.js"></script>
+<script>
+(function () {
+  'use strict';
+  var API = String(window.GOO_API || '').replace(/\/$/, '');
+  var $ = function (id) { return document.getElementById(id); };
+  var KEY = 'harmony-desk-token';
+  var filter = 'handoff';
+  var drafts = {};
+  var timer = null;
+  var CH = { sms: 'SMS', ussd: 'USSD', voice: 'Voice', web: 'Web' };
+
+  function token() { try { return sessionStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+
+  async function api(method, path, body) {
+    var headers = { 'Content-Type': 'application/json' };
+    if (token()) headers.Authorization = 'Bearer ' + token();
+    var res = await fetch(API + path, { method: method, headers: headers, body: body ? JSON.stringify(body) : undefined });
+    var data = {};
+    try { data = await res.json(); } catch (e) {}
+    if (!res.ok) { var err = new Error(data.error || 'Request failed'); err.status = res.status; throw err; }
+    return data;
+  }
+
+  function lock(msg) {
+    clearInterval(timer);
+    $('desk').classList.add('hidden');
+    $('lock').classList.remove('hidden');
+    $('lockErr').textContent = msg || '';
+    $('lockErr').classList.toggle('show', !!msg);
+  }
+
+  function ago(iso) {
+    var s = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+    if (s < 60) return s + 's ago';
+    if (s < 3600) return Math.round(s / 60) + ' min ago';
+    if (s < 86400) return Math.round(s / 3600) + ' h ago';
+    return new Date(iso).toLocaleDateString();
+  }
+
+  function flash(msg) {
+    $('deskMsg').textContent = msg;
+    $('deskMsg').classList.add('show');
+    setTimeout(function () { $('deskMsg').classList.remove('show'); }, 3500);
+  }
+
+  async function load() {
+    var data;
+    try {
+      var [list, all] = await Promise.all([api('GET', '/api/agent/tickets?status=' + filter), api('GET', '/api/agent/tickets?status=all')]);
+      data = list;
+      $('sWaiting').textContent = all.tickets.filter(function (t) { return t.status === 'handoff'; }).length;
+      $('sAnswered').textContent = all.tickets.filter(function (t) { return t.status === 'answered'; }).length;
+    } catch (e) {
+      if (e.status === 401 || e.status === 503) return lock(e.status === 503 ? e.message : 'That token was not accepted.');
+      return;
+    }
+    $('lock').classList.add('hidden');
+    $('desk').classList.remove('hidden');
+    render(data.tickets);
+  }
+
+  function render(tickets) {
+    var wrap = $('tickets');
+    var active = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.id : null;
+    wrap.innerHTML = '';
+    if (!tickets.length) {
+      wrap.innerHTML = '<div class="empty">' + (filter === 'handoff' ? 'Nobody is waiting. Nice work.' : 'No tickets yet.') + '</div>';
+      return;
+    }
+    tickets.forEach(function (t) {
+      var card = document.createElement('article');
+      card.className = 'ticket';
+      card.innerHTML =
+        '<div class="ticket-head"><span class="code"></span><span class="status"></span><span class="ch"></span><span style="flex:1"></span><span class="note" style="margin:0"></span></div>' +
+        '<div style="font-weight:600"></div><q></q>' +
+        (t.answer ? '<div class="ans"></div>' : '') +
+        (t.status !== 'closed' ? '<textarea placeholder="Reply by SMS…" maxlength="450"></textarea><div class="count">0 / 450</div>' +
+          '<div class="row"><button class="btn small ghost" type="button" data-act="close">Close</button><button class="btn small" type="button" data-act="reply">Send SMS</button></div>' : '');
+      card.querySelector('.code').textContent = t.code;
+      var st = card.querySelector('.status');
+      st.textContent = t.status === 'handoff' ? 'Needs a person' : t.status;
+      st.classList.add(t.status);
+      card.querySelector('.ch').textContent = 'via ' + (CH[t.channel] || t.channel);
+      card.querySelector('.note').textContent = ago(t.createdAt);
+      card.children[1].textContent = t.phone;
+      card.querySelector('q').textContent = t.question;
+      if (t.answer) card.querySelector('.ans').textContent = (t.status === 'answered' ? 'Answer sent: ' : '') + t.answer;
+      var ta = card.querySelector('textarea');
+      if (ta) {
+        ta.dataset.id = t.id;
+        ta.value = drafts[t.id] || '';
+        card.querySelector('.count').textContent = ta.value.length + ' / 450';
+        ta.addEventListener('input', function () { drafts[t.id] = ta.value; card.querySelector('.count').textContent = ta.value.length + ' / 450'; });
+        card.querySelector('[data-act="reply"]').addEventListener('click', async function () {
+          var msg = ta.value.trim();
+          if (!msg) return ta.focus();
+          this.disabled = true;
+          try {
+            await api('POST', '/api/agent/tickets/' + t.id + '/reply', { message: msg });
+            delete drafts[t.id];
+            flash('Sent to ' + t.phone + ' (' + t.code + ')');
+            load();
+          } catch (e) { flash(e.message); this.disabled = false; }
+        });
+        card.querySelector('[data-act="close"]').addEventListener('click', async function () {
+          try { await api('POST', '/api/agent/tickets/' + t.id + '/close'); load(); } catch (e) { flash(e.message); }
+        });
+        if (active === t.id) setTimeout(function () { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 0);
+      }
+      wrap.appendChild(card);
+    });
+  }
+
+  document.querySelectorAll('[data-filter]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      filter = b.dataset.filter;
+      document.querySelectorAll('[data-filter]').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      load();
+    });
+  });
+
+  $('broadcast').addEventListener('click', async function () {
+    if (!confirm('Send the next lesson by SMS to every subscribed student?')) return;
+    this.disabled = true;
+    try {
+      var res = await api('POST', '/api/admin/broadcast', {});
+      flash('Lesson sent to ' + res.sent + ' of ' + res.students + ' subscribers.');
+    } catch (e) { flash(e.message); }
+    this.disabled = false;
+  });
+
+  $('lockForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    try { sessionStorage.setItem(KEY, $('token').value.trim()); } catch (err) {}
+    start();
+  });
+
+  function start() {
+    load();
+    clearInterval(timer);
+    timer = setInterval(function () {
+      var typing = document.activeElement && document.activeElement.tagName === 'TEXTAREA' && document.activeElement.value;
+      if (!document.hidden && !typing) load();
+    }, 8000);
+  }
+  start();
+})();
+</script>
+<script src="../site-chrome.js"></script>
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#03121a">
+<meta name="description" content="Learn about the ocean from any phone: SMS, USSD, voice or the web. Ask questions, get lessons, and support Kenya's coast with M-Pesa, Airtel Money or card.">
+<title>Harmony Mobile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+
+<header class="appbar">
+  <a class="brand" href="./" aria-label="Harmony Mobile home">
+    <span class="brand-mark" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#022028" stroke-width="2.2" stroke-linecap="round"><path d="M2 14c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2"/><path d="M2 19c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2" opacity=".55"/><path d="M12 3s4 4.2 4 7a4 4 0 0 1-8 0c0-2.8 4-7 4-7z"/></svg>
+    </span>
+    <span>Harmony<small>Immersive Learning</small></span>
+  </a>
+  <span class="appbar-spacer"></span>
+  <span class="pill" id="modePill" title="Connection status"><span class="dot"></span><span id="modeText">Connecting…</span></span>
+  <a class="icon-link" href="../index.html" aria-label="Back to Immersive Learning home">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
+  </a>
+</header>
+
+<div class="shell layout">
+  <main id="main">
+    <section class="hero" aria-labelledby="heroTitle">
+      <img class="hero-bg" src="../Guardians-of-the-Ocean/assets/images/cities/mombasa.webp" alt="" fetchpriority="high">
+      <span class="eyebrow">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+        No smartphone or data needed
+      </span>
+      <h1 id="heroTitle">Learn the ocean from <em>any phone.</em></h1>
+      <p>Daily lessons by SMS, a USSD menu, a voice line and an AI guide that answers questions. Support Mombasa's mangroves with M-Pesa, Airtel Money or card.</p>
+      <div class="channels">
+        <button class="channel code" type="button" data-copy="ussd" aria-label="Copy the USSD code">
+          <span>Dial USSD</span><strong id="ussdCode">*384*2026#</strong>
+        </button>
+        <button class="channel" type="button" data-copy="sms" aria-label="Copy the SMS shortcode">
+          <span>SMS "HELP" to</span><strong id="smsCode">22384</strong>
+        </button>
+        <a class="channel" id="voiceLink" href="#phone">
+          <span>Voice line</span><strong id="voiceNumber">Call Harmony</strong>
+        </a>
+        <a class="channel" href="#ask">
+          <span>On the web</span><strong>Ask the guide</strong>
+        </a>
+      </div>
+    </section>
+
+    <nav class="tabbar" role="tablist" aria-label="Harmony sections">
+      <button class="tab" role="tab" id="tab-learn" data-tab="learn" aria-controls="panel-learn" aria-selected="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8l10-5 10 5-10 5z"/><path d="M6 10v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>
+        Learn
+      </button>
+      <button class="tab" role="tab" id="tab-ask" data-tab="ask" aria-controls="panel-ask" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5M12 16.5h.01"/></svg>
+        Ask
+      </button>
+      <button class="tab" role="tab" id="tab-support" data-tab="support" aria-controls="panel-support" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.6-9.3-9.2C1.4 8.4 3.6 5 7 5c2 0 3.3 1.1 5 3 1.7-1.9 3-3 5-3 3.4 0 5.6 3.4 4.3 6.8C19.5 16.4 12 21 12 21z"/></svg>
+        Support
+      </button>
+      <button class="tab" role="tab" id="tab-phone" data-tab="phone" aria-controls="panel-phone" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M9 6h6v5H9zM9 14h.01M12 14h.01M15 14h.01M9 17h.01M12 17h.01M15 17h.01"/></svg>
+        Phone
+        <span class="badge hidden" id="phoneBadge">1</span>
+      </button>
+    </nav>
+
+    <!-- ───────── LEARN ───────── -->
+    <section class="panel active" id="panel-learn" role="tabpanel" aria-labelledby="tab-learn">
+      <div class="card" id="joinCard">
+        <form id="joinForm" novalidate>
+          <h2>Get a lesson a day by SMS</h2>
+          <p class="lede">Short, 2-minute lessons about mangroves, coral, floods and safe water. Free to receive, works on any phone.</p>
+          <label class="field">
+            <span>Phone number</span>
+            <div class="input-wrap">
+              <input class="input" id="joinPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0712 345 678" required>
+              <span class="net-badge" data-net-for="joinPhone"><i></i><b></b></span>
+            </div>
+          </label>
+          <div class="row">
+            <label class="field"><span>First name <em>optional</em></span><input class="input" id="joinName" name="name" autocomplete="given-name" maxlength="40" placeholder="Amina"></label>
+            <label class="field"><span>School <em>optional</em></span><input class="input" id="joinSchool" name="school" maxlength="60" placeholder="Likoni Primary"></label>
+          </div>
+          <button class="btn block" type="submit" id="joinBtn"><span class="spin" aria-hidden="true"></span><span>Send my first lesson</span></button>
+          <p class="note">Text <b>STOP</b> to <b data-sms-code>22384</b> any time to quit. We only use your number for Harmony lessons.</p>
+          <div class="alert err" id="joinErr" role="alert"></div>
+        </form>
+        <div class="success-burst" id="joinOk" aria-live="polite">
+          <div class="check"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+          <h2 id="joinOkTitle">You're in!</h2>
+          <p class="lede" id="joinOkText">Your first lesson is on its way by SMS.</p>
+          <button class="btn ghost small" type="button" id="joinAgain">Add another number</button>
+        </div>
+      </div>
+
+      <div class="section-title"><h2>This week's lessons</h2><span id="lessonCount"></span></div>
+      <div class="lessons" id="lessons" tabindex="0" aria-label="Lessons, scroll sideways"></div>
+
+      <div class="section-title"><h2>Three ways, no internet</h2></div>
+      <div class="ways">
+        <div class="way">
+          <div class="way-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/></svg></div>
+          <h3>USSD menu</h3>
+          <p>Dial <code data-ussd-code>*384*2026#</code> for lessons, quizzes, questions, a guide call-back and M-Pesa support.</p>
+        </div>
+        <div class="way">
+          <div class="way-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 4z"/></svg></div>
+          <h3>SMS commands</h3>
+          <dl class="cmds">
+            <dt>LESSON</dt><dd>next lesson</dd>
+            <dt>QUIZ</dt><dd>test yourself</dd>
+            <dt>ASK …</dt><dd>ask anything</dd>
+            <dt>AGENT</dt><dd>talk to a person</dd>
+            <dt>PAY 100</dt><dd>support the coast</dd>
+          </dl>
+        </div>
+        <div class="way">
+          <div class="way-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></div>
+          <h3>Voice line</h3>
+          <p>Call and use the keypad, or <b>just say your question</b>. The answer arrives by SMS. Press 3 to reach a guide.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── ASK ───────── -->
+    <section class="panel" id="panel-ask" role="tabpanel" aria-labelledby="tab-ask">
+      <div class="chat">
+        <div class="card">
+          <h2>Ask the Harmony guide</h2>
+          <p class="lede" style="margin:0">The same AI guide answers on SMS, USSD and the voice line. Answers come from ocean and river-health research, with sources.</p>
+        </div>
+        <div class="chips" id="suggestions">
+          <button class="chip" type="button">Why do corals bleach?</button>
+          <button class="chip" type="button">How do mangroves stop erosion?</button>
+          <button class="chip" type="button">Is river water safe to drink?</button>
+          <button class="chip" type="button">What is One Health?</button>
+        </div>
+        <div class="thread" id="thread" aria-live="polite"></div>
+
+        <div class="toggle-row">
+          <p>Text me the answers<small>Get each answer on your phone as an SMS too</small></p>
+          <label class="switch"><input type="checkbox" id="smsToggle" aria-label="Text me the answers"><span></span></label>
+        </div>
+        <div class="field hidden" id="askPhoneField">
+          <div class="input-wrap">
+            <input class="input" id="askPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Your phone number" aria-label="Phone number for SMS answers">
+            <span class="net-badge" data-net-for="askPhone"><i></i><b></b></span>
+          </div>
+        </div>
+
+        <div class="card human">
+          <span class="avatar"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span>
+          <div style="flex:1;min-width:0"><h3>Prefer a person?</h3><p class="note" style="margin:0">A Harmony guide calls you back for free, even on a basic phone.</p></div>
+          <button class="btn small" type="button" id="openHuman">Call me</button>
+        </div>
+
+        <form class="composer" id="askForm">
+          <input id="askInput" type="text" maxlength="500" placeholder="Ask about the ocean, rivers or safe water…" aria-label="Your question" autocomplete="off">
+          <button class="send" type="submit" id="askSend" aria-label="Send question" disabled>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ───────── SUPPORT ───────── -->
+    <section class="panel" id="panel-support" role="tabpanel" aria-labelledby="tab-support">
+      <div class="card">
+        <div class="fund">
+          <img src="../Guardians-of-the-Ocean/assets/images/cities/mombasa-sm.webp" alt="Mombasa coastline">
+          <div>
+            <h2>Mombasa estuary replanting</h2>
+            <p>Community mangrove planting · Kenya</p>
+          </div>
+        </div>
+        <div class="meter" role="progressbar" aria-label="Raised by mobile money" aria-valuemin="0" aria-valuemax="100" id="meter"><i id="meterFill"></i></div>
+        <div class="meter-row"><span><b id="raised">KES 0</b> raised by phone</span><span id="supporters">Be the first</span></div>
+
+        <form id="payForm" novalidate>
+          <div class="methods" role="radiogroup" aria-label="Payment method">
+            <button class="method" type="button" role="radio" data-method="mpesa" aria-checked="true">
+              <span class="logo">M</span><b>M-Pesa</b><small>Safaricom</small>
+            </button>
+            <button class="method" type="button" role="radio" data-method="airtel" aria-checked="false">
+              <span class="logo">A</span><b>Airtel Money</b><small>Airtel</small>
+            </button>
+            <button class="method" type="button" role="radio" data-method="card" aria-checked="false">
+              <span class="logo">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+              </span><b>Card</b><small>Visa · Mastercard</small>
+            </button>
+          </div>
+
+          <div class="amounts" role="radiogroup" aria-label="Amount" id="amounts"></div>
+          <label class="field hidden" id="otherField">
+            <span>Amount <em id="otherHint"></em></span>
+            <input class="input" id="otherAmount" type="number" inputmode="numeric" min="10" step="1" placeholder="Enter amount">
+          </label>
+
+          <label class="field" id="payPhoneField">
+            <span><span id="payPhoneLabel">M-Pesa number</span><em>you'll get a PIN prompt</em></span>
+            <div class="input-wrap">
+              <input class="input" id="payPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0712 345 678">
+              <span class="net-badge" data-net-for="payPhone"><i></i><b></b></span>
+            </div>
+          </label>
+          <label class="field hidden" id="payEmailField">
+            <span>Email for your receipt</span>
+            <input class="input" id="payEmail" type="email" autocomplete="email" placeholder="you@example.com">
+          </label>
+
+          <div class="pay-summary"><span>You're giving</span><b id="payTotal">KES 100</b></div>
+          <button class="btn block mpesa" type="submit" id="payBtn"><span class="spin" aria-hidden="true"></span><span id="payBtnText">Send M-Pesa prompt</span></button>
+          <div class="alert err" id="payErr" role="alert"></div>
+          <p class="secure">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <span id="secureText">You approve with your PIN on your own phone. We never see it.</span>
+          </p>
+        </form>
+      </div>
+      <p class="note" style="text-align:center">85% goes to field teams planting and protecting mangroves · 15% runs the programme.</p>
+    </section>
+
+    <!-- ───────── PHONE (mobile only; desktop shows it in the rail) ───────── -->
+    <section class="panel" id="panel-phone" role="tabpanel" aria-labelledby="tab-phone">
+      <div id="phoneSlotMobile"></div>
+    </section>
+  </main>
+
+  <aside class="rail" aria-label="Feature phone simulator">
+    <div id="phoneSlotDesktop"></div>
+  </aside>
+</div>
+
+<div id="simulator">
+  <div class="sim-head">
+    <div>
+      <h2>Try it on a basic phone</h2>
+      <p id="simSub">Dial the USSD code, text the shortcode or call. Everything here hits the real Harmony server.</p>
+    </div>
+  </div>
+  <div class="sim-lines" role="group" aria-label="Which phone line to simulate" id="simLines"></div>
+  <div id="phoneMount"></div>
+</div>
+
+<!-- Payment status sheet -->
+<div class="sheet" id="paySheet" role="dialog" aria-modal="true" aria-labelledby="stkTitle">
+  <div class="sheet-backdrop" data-close></div>
+  <div class="sheet-body">
+    <div class="grabber"></div>
+    <button class="sheet-close" type="button" data-close aria-label="Close">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+    <div class="stk" id="stk" aria-live="polite"></div>
+  </div>
+</div>
+
+<!-- Talk to a person sheet -->
+<div class="sheet" id="humanSheet" role="dialog" aria-modal="true" aria-labelledby="humanTitle">
+  <div class="sheet-backdrop" data-close></div>
+  <div class="sheet-body">
+    <div class="grabber"></div>
+    <button class="sheet-close" type="button" data-close aria-label="Close">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+    <form id="humanForm" novalidate>
+      <h2 id="humanTitle" style="font:600 22px/1.2 var(--display);margin:4px 0 6px">Talk to a Harmony guide</h2>
+      <p class="lede">We'll call your phone for free. If no guide is free, they'll reply by SMS.</p>
+      <label class="field">
+        <span>Your phone number</span>
+        <div class="input-wrap">
+          <input class="input" id="humanPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0712 345 678">
+          <span class="net-badge" data-net-for="humanPhone"><i></i><b></b></span>
+        </div>
+      </label>
+      <label class="field">
+        <span>What do you need help with? <em>optional</em></span>
+        <input class="input" id="humanQuestion" maxlength="300" placeholder="e.g. Our school well smells bad">
+      </label>
+      <button class="btn block" type="submit" id="humanBtn"><span class="spin" aria-hidden="true"></span><span>Call me back</span></button>
+      <div class="alert err" id="humanErr" role="alert"></div>
+    </form>
+    <div class="success-burst" id="humanOk" aria-live="polite">
+      <div class="check"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+      <h2 id="humanOkTitle" style="font:600 22px/1.2 var(--display);margin:0 0 6px">A guide will call you</h2>
+      <p class="lede" id="humanOkText"></p>
+      <button class="btn ghost small" type="button" data-close>Done</button>
+    </div>
+  </div>
+</div>
+
+<script src="../Guardians-of-the-Ocean/js/goo-config.js"></script>
+<script src="mobile.js"></script>
+<script src="phone.js"></script>
+<script src="../site-chrome.js"></script>
+</body>
+</html>

@@ -338,6 +338,13 @@ button.uxrow{
   border-radius:50%; animation:uxspin .7s linear infinite; display:none;
 }
 .ux-checkout.is-loading .ux-checkout-spin{ display:block; }
+.ux-mobile-pay{
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  min-height:clamp(40px, 2.6vw, 46px); border-radius:10px; text-decoration:none;
+  border:1px solid #d7e7dc; background:#f3faf5; color:#12613a;
+  font:700 13px/1 'Space Grotesk', system-ui, sans-serif; letter-spacing:.03em;
+}
+.ux-mobile-pay:hover{ background:#e7f5ec; }
 @keyframes uxspin { to { transform: rotate(360deg); } }
 
 .uxcard-bottom{ display:flex; align-items:center; gap:.5vw; margin-top:auto; padding-top:1.4vw; flex-wrap:wrap; }
@@ -1610,6 +1617,7 @@ html.embed .uxclose-pwa{ display:flex !important; }
           <span class="ux-checkout-spin" aria-hidden="true"></span>
           <span class="ux-checkout-label">Checkout</span>
         </button>
+        <a class="ux-mobile-pay" href="../mobile/#support">Pay with M-Pesa or Airtel Money</a>
       </div>
       <div class="ux-ledger-btns" id="uxLedgerBtns" hidden>
         <button class="ux-checkout" type="button" data-ledger="summary">Ledger Summary</button>

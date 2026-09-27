@@ -76,3 +76,95 @@ model StripeEvent {
 
   @@map("stripe_events")
 }
+
+// ── Mobile access: students on SMS / USSD / voice, mobile money, the agent ──
+
+enum MobileProvider {
+  mpesa
+  airtel
+}
+
+enum MobilePaymentStatus {
+  pending
+  paid
+  failed
+  cancelled
+  timeout
+}
+
+enum AgentTicketStatus {
+  open
+  answered
+  handoff
+  closed
+}
+
+model Student {
+  id          String   @id @default(cuid())
+  // 2547XXXXXXXX / 2541XXXXXXXX
+  phone       String   @unique
+  name        String?
+  school      String?
+  optedIn     Boolean  @default(false) @map("opted_in")
+  lessonIndex Int      @default(0) @map("lesson_index")
+  quizPending Int?     @map("quiz_pending")
+  points      Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([optedIn])
+  @@map("students")
+}
+
+model MobilePayment {
+  id            String              @id @default(cuid())
+  provider      MobileProvider
+  phone         String
+  // Whole shillings.
+  amount        Int
+  currency      String              @default("KES")
+  status        MobilePaymentStatus @default(pending)
+  purpose       String              @default("restoration")
+  channel       String              @default("web")
+  // Daraja CheckoutRequestID / Airtel transaction id.
+  providerRef   String?             @map("provider_ref")
+  merchantRef   String?             @map("merchant_ref")
+  receipt       String?
+  failureReason String?             @map("failure_reason")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  @@unique([provider, providerRef])
+  @@index([phone])
+  @@index([status])
+  @@map("mobile_payments")
+}
+
+model AgentTicket {
+  id        String            @id @default(cuid())
+  phone     String
+  channel   String
+  question  String
+  answer    String?
+  status    AgentTicketStatus @default(open)
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([phone])
+  @@map("agent_tickets")
+}
+
+model MessageLog {
+  id         String   @id @default(cuid())
+  direction  String
+  channel    String
+  phone      String
+  body       String
+  status     String   @default("sent")
+  providerId String?  @map("provider_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([phone])
+  @@map("message_logs")
+}
