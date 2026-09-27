@@ -13,6 +13,7 @@ services:
       paths:
         - index.html
         - agent-bridge.js
+        - site-chrome.js
         - Guardians-of-the-Ocean/**
         - Aqua-ask-/aquaask.html
         - Aqua-ask-/h2o-assets/**
