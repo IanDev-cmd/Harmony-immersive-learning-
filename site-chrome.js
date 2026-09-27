@@ -3,14 +3,16 @@
   var path = location.pathname;
   var base = "";
   if (path.indexOf("/pwa/island-weather-pwa/") !== -1) base = "../../../";
-  else if (path.indexOf("/Guardians-of-the-Ocean/") !== -1 || path.indexOf("/Aqua-ask-/") !== -1) base = "../";
+  else if (path.indexOf("/Guardians-of-the-Ocean/") !== -1 || path.indexOf("/Aqua-ask-/") !== -1 || path.indexOf("/mobile/") !== -1) base = "../";
 
   var homeHref = base + "index.html";
   var globeHref = base + "Guardians-of-the-Ocean/desktop.html";
   var askHref = base + "Aqua-ask-/aquaask.html";
+  var mobileHref = base + "mobile/";
   var here = "home";
   if (path.indexOf("desktop.html") !== -1) here = "globe";
   else if (path.indexOf("aquaask.html") !== -1) here = "ask";
+  else if (path.indexOf("/mobile/") !== -1) here = "mobile";
 
   var style = document.createElement("style");
   style.textContent = [
@@ -39,7 +41,8 @@
   [
     ["Home", homeHref, "home"],
     ["3D Globe", globeHref, "globe"],
-    ["Ask", askHref, "ask"]
+    ["Ask", askHref, "ask"],
+    ["Mobile", mobileHref, "mobile"]
   ].forEach(function (item) {
     var a = document.createElement("a");
     a.href = item[1];

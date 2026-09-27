@@ -491,6 +491,9 @@ svg{flex:none}
 .status.closed{background:var(--surface-2);color:var(--muted)}
 .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
 
+/* site-chrome.js page buttons: the app bar already links home, so they would only overlap it. */
+.il-jumps{display:none !important}
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
 }
