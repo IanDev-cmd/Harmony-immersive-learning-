@@ -1,0 +1,8 @@
+.git
+.history
+**/node_modules
+**/__pycache__
+**/.venv
+Guardians-of-the-Ocean/server
+Guardians-of-the-Ocean/chroma_db
+Aqua-ask-/chroma_db

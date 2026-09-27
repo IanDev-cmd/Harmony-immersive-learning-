@@ -782,7 +782,7 @@
     cinematic = true;
     stopTour();
     clearTimeout(idleTimer);
-    var skipGlobe = pwaView();
+    var skipGlobe = pwaView() || location.hash === "#roadmap";
     if(!skipGlobe && appEl) appEl.classList.add('globe-focus');
     var spinMs = skipGlobe ? 0 : (reducedMotion() ? 800 : 5000);
     window.__spinBoost = skipGlobe || reducedMotion() ? 0 : 0.042;

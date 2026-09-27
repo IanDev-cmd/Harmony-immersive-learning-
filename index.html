@@ -211,6 +211,7 @@
   .shortcut span{max-width:84px;text-align:center;line-height:1.2;}
   .c-globe{background:linear-gradient(160deg,#1a73e8,#34a853);}
   .c-ask{background:#129e8e;}
+  .c-maps{background:#1a73e8;}
   .c-cities{background:#e8a317;}
   .c-sources{background:#7b3ff2;}
   .c-add{background:#f3e6cf;color:#3c4043;}
@@ -410,7 +411,7 @@
   var ASK = "Aqua-ask-/aquaask.html";
   var defaults = [
     {name:"Globe", href:GLOBE, kind:"c-globe", icon:"globe"},
-    {name:"Ask", href:ASK, kind:"c-ask", icon:"drop"},
+    {name:"2D maps", href:GLOBE + "#roadmap", kind:"c-maps", icon:"map"},
     {name:"Cities", href:GLOBE, kind:"c-cities", icon:"city"},
     {name:"Sources", href:ASK + "#sources", kind:"c-sources", icon:"doc"},
     {name:"Mobile", href:"mobile/", kind:"c-mobile", icon:"phone"},
@@ -419,6 +420,7 @@
   var icons = {
     globe:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.8 3.8 5.8 3.8 9S14.5 18.2 12 21c-2.5-2.8-3.8-5.8-3.8-9S9.5 5.8 12 3z"/></svg>',
     drop:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><path d="M12 3s6 6.2 6 10.2A6 6 0 0 1 6 13.2C6 9.2 12 3 12 3z"/></svg>',
+    map:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linejoin="round"><path d="M9 4.5 3.5 6.5v13L9 17.5l6 2 5.5-2v-13L15 6.5 9 4.5z"/><path d="M9 4.5v13M15 6.5v13"/></svg>',
     city:'<svg viewBox="0 0 24 24" fill="#fff"><path d="M4 20V9l5-3v3l5-3v14H4zm12 0v-8h4v8h-4z"/></svg>',
     doc:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><path d="M6 4h9l3 3v13H6z"/><path d="M15 4v3h3M8 12h8M8 16h6"/></svg>',
     plus:'<svg viewBox="0 0 24 24" fill="none" stroke="#3c4043" stroke-width="1.8" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg>',

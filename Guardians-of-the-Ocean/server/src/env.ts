@@ -62,7 +62,7 @@ const envSchema = z.object({
   AIRTEL_CURRENCY: z.string().optional().default("KES"),
 
   // The learning agent.
-  AQUA_ASK_URL: z.string().optional().default("https://aqua-ask.onrender.com"),
+  AQUA_ASK_URL: z.string().optional().default("https://harmony-immersive-learning.onrender.com"),
   GOOGLE_API_KEY: text,
   GOOGLE_CHAT_MODEL: z.string().optional().default("gemini-2.5-flash-lite"),
   AGENT_PHONES: text,

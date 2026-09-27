@@ -1,51 +1,23 @@
-# Immersive Learning — one Blueprint for https://github.com/IanDev-cmd/Harmony-immersive-learning- (branch main).
-# Public site: https://harmony-immersive-learning.onrender.com
-# Ask API stays https://aqua-ask.onrender.com (this same repo, Docker). The static site cannot run that API.
-# Ask (Docker) and the Harmony API (Node: Stripe, M-Pesa, Airtel, SMS/USSD/voice) stay on the
-# $7 Starter plan so they do not sleep. Setup guide: Guardians-of-the-Ocean/server/README.md
+# Immersive Learning — one service from https://github.com/IanDev-cmd/Harmony-immersive-learning-
+# Live: https://harmony-immersive-learning.onrender.com
+# Starter so search, uploads, and the voice command queue do not sleep.
 
 services:
   - type: web
     name: harmony-immersive-learning
-    runtime: static
-    branch: main
-    buildCommand: "true"
-    staticPublishPath: .
-    buildFilter:
-      paths:
-        - index.html
-        - agent-bridge.js
-        - site-chrome.js
-        - Guardians-of-the-Ocean/**
-        - Aqua-ask-/aquaask.html
-        - Aqua-ask-/h2o-assets/**
-        - mobile/**
-      ignoredPaths:
-        - Guardians-of-the-Ocean/server/**
-    headers:
-      - path: /Guardians-of-the-Ocean/sw.js
-        name: Cache-Control
-        value: no-cache
-      - path: /Guardians-of-the-Ocean/manifest.webmanifest
-        name: Content-Type
-        value: application/manifest+json
-
-  - type: web
-    name: aqua-ask
     runtime: docker
     plan: starter
     branch: main
-    dockerfilePath: ./Aqua-ask-/Dockerfile
-    dockerContext: ./Aqua-ask-
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /health
-    buildFilter:
-      paths:
-        - Aqua-ask-/**
     envVars:
       - key: WEB_CONCURRENCY
         value: "1"
       - key: CHROMA_DIR
         value: /app/chroma_db
+      - key: SITE_DIR
+        value: /site
       - key: PUBLIC_APP_URL
         value: https://harmony-immersive-learning.onrender.com
       - key: GITHUB_REPO_URL
@@ -61,90 +33,4 @@ services:
       - key: XAI_API_KEY
         sync: false
       - key: AGENT_WEBHOOK_SECRET
-        sync: false
-
-  - type: web
-    name: guardians-stripe
-    runtime: node
-    plan: starter
-    branch: main
-    rootDir: Guardians-of-the-Ocean/server
-    # --include=dev: TypeScript and the Prisma CLI are dev dependencies and NODE_ENV is production.
-    buildCommand: npm install --include=dev && npx prisma generate && npm run build
-    startCommand: npx prisma migrate deploy && node dist/index.js
-    healthCheckPath: /health
-    buildFilter:
-      paths:
-        - Guardians-of-the-Ocean/server/**
-    envVars:
-      - key: NODE_VERSION
-        value: "20"
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
-        sync: false
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
-      - key: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-        sync: false
-      - key: FRONTEND_ORIGIN
-        fromService:
-          name: harmony-immersive-learning
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
-      - key: APP_BASE_URL
-        fromService:
-          name: harmony-immersive-learning
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
-      # ── Mobile access (see server/README.md). Everything below is optional: until a
-      # gateway's keys are set that channel runs in practice mode on the simulator. ──
-      - key: DEV_TOOLS
-        # Browser phone simulator for demos. Switches itself off once any real gateway is set.
-        value: "1"
-      - key: CALLBACK_TOKEN
-        # Secret path segment for M-Pesa / Airtel / Africa's Talking callbacks. Use hex: openssl rand -hex 24
-        sync: false
-      - key: ADMIN_TOKEN
-        # Guide desk (/mobile/agent.html) and lesson broadcasts.
-        generateValue: true
-      - key: AQUA_ASK_URL
-        value: https://aqua-ask.onrender.com
-      - key: AGENT_PHONES
-        # Comma-separated guide numbers, e.g. 0711000111,0722000222
-        sync: false
-      - key: AT_USERNAME
-        sync: false
-      - key: AT_API_KEY
-        sync: false
-      - key: AT_SMS_FROM
-        sync: false
-      - key: AT_VOICE_NUMBER
-        sync: false
-      - key: USSD_CODE
-        value: "*384*2026#"
-      - key: SMS_SHORTCODE
-        value: "22384"
-      - key: MPESA_ENV
-        value: sandbox
-      - key: MPESA_CONSUMER_KEY
-        sync: false
-      - key: MPESA_CONSUMER_SECRET
-        sync: false
-      - key: MPESA_SHORTCODE
-        sync: false
-      - key: MPESA_PASSKEY
-        sync: false
-      - key: MPESA_TYPE
-        value: paybill
-      - key: AIRTEL_ENV
-        value: sandbox
-      - key: AIRTEL_CLIENT_ID
-        sync: false
-      - key: AIRTEL_CLIENT_SECRET
-        sync: false
-      - key: GOOGLE_API_KEY
-        # Optional: transcribes spoken questions on the voice line.
         sync: false

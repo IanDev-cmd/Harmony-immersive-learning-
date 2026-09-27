@@ -82,8 +82,7 @@ self.addEventListener('fetch', (event) => {
     url.includes('news.google.com') ||
     url.includes('sciencedaily.com') ||
     url.includes('earthobservatory.nasa.gov') ||
-    url.includes('google.com/s2/favicons') ||
-    url.includes('guardians-stripe.onrender.com');
+    url.includes('google.com/s2/favicons');
   const tiles = url.includes('arcgisonline.com') || url.includes('tile.openstreetmap.org');
   const appFile =
     event.request.mode === 'navigate' ||

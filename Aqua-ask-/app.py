@@ -1949,6 +1949,8 @@ async def api_upload_status(upload_id: str) -> UploadStatus:
 if (ROOT / "h2o-assets").is_dir():
     app.mount("/h2o-assets", StaticFiles(directory=str(ROOT / "h2o-assets")), name="h2o-assets")
 
+SITE = Path(os.getenv("SITE_DIR", ""))
+
 
 @app.get("/health")
 async def health():
@@ -1971,10 +1973,17 @@ async def health():
 @app.get("/")
 @app.get("/aquaask.html")
 async def root_page():
+    site_index = SITE / "index.html" if str(SITE) else None
+    if site_index and site_index.is_file():
+        return FileResponse(site_index)
     page = ROOT / "aquaask.html"
     if page.is_file():
         return FileResponse(page)
     return {"service": "aquaask-rag", "docs": "/docs", "url": PUBLIC_APP_URL, "repo": GITHUB_REPO_URL}
+
+
+if str(SITE) and SITE.is_dir():
+    app.mount("/", StaticFiles(directory=str(SITE), html=True), name="site")
 
 
 if __name__ == "__main__":

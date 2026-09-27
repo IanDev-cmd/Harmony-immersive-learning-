@@ -981,12 +981,9 @@
   }
 
   var GITHUB_URL = "https://github.com/IanDev-cmd/Harmony-immersive-learning-";
-  var RENDER_URL = "https://aqua-ask.onrender.com";
   var API_BASE = "";
   if (location.protocol === "file:" || location.hostname === "127.0.0.1" || location.hostname === "localhost") {
     API_BASE = "http://127.0.0.1:8001";
-  } else if (location.pathname.indexOf("/Aqua-ask-/") === 0) {
-    API_BASE = RENDER_URL;
   }
 
   var uploadCard = document.getElementById("uploadCard");
